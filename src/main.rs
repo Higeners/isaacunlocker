@@ -1,16 +1,17 @@
-#![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
 slint::slint! {
-	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox} from "std-widgets.slint";
+	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button} from "std-widgets.slint";
 	import "./src/upheavtt.ttf";
 	struct AchievementIcon {
 		image: image,
 		name: string,
+		unlocked: bool,
 	}
 
 	export component Icon inherits Image {
 		width: 60px;
 		height: 60px;
-		property <bool> has-unlocked;
+		in-out property <bool> has-unlocked;
 		rect := Rectangle {
 			callback pressed;
 			ta:= TouchArea { 
@@ -22,6 +23,7 @@ slint::slint! {
 				root.has-unlocked = !root.has-unlocked;
 			}
 			border-width: 0px;
+			border-radius: 2px;
 			border-color: #b44160;
 
 			animate border-width {duration: 100ms ; easing: ease-in;}
@@ -85,18 +87,18 @@ slint::slint! {
 		preferred-height: 200px;
 		background: #202325;
 		in property <[AchievementIcon]> icons: [
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
-			{image: @image-url("images/Achievement_-0-_Baby_icon.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
 		];
 		property <int> list-width: 16;//Math.max(Math.ceil(self.width / 100px), 2);
 		property <int> list-height: Math.ceil(icons.length / list-width);
@@ -112,6 +114,7 @@ slint::slint! {
 		}
 		VerticalLayout {
 			input-tab:= VerticalLayout {
+				
 				InputField {
 					input-title: "Search:";
 					font-size: 40px;
@@ -141,6 +144,10 @@ slint::slint! {
 				CheckBox { 
 					text: "Unlocked";
 				}
+				Button { 
+					text: "Apply";
+					preferred-width: 100px;
+				 }
 		}
 			ListView  {
 				for i in list-height : HorizontalLayout{
@@ -153,6 +160,7 @@ slint::slint! {
 						Icon {
 							
 							source: icons[index].image;
+							has-unlocked: icons[index].unlocked;
 						}
 						Text {
 							text: index + 1;
@@ -177,25 +185,50 @@ fn imbed_images() -> Vec<(slint::Image, String)>{
 	use include_dir::*;
 	use slint::*;
 	const IMAGES: Dir = include_dir!("./images");
+	const NAMES: &str = include_str!("Achievements.txt");
+	let mut files: Vec<&File> = IMAGES.files().collect();
+	files.sort_by(|a, b| {
+
+		a.path().to_str().unwrap()
+		.strip_suffix(".png")
+		.unwrap().parse::<i16>().unwrap()
+		.cmp(&b.path().to_str().unwrap()
+		.strip_suffix(".png")
+		.unwrap().parse::<i16>().unwrap())
+	});
 	let mut images: Vec<(slint::Image, String)> = vec![];
-	for file in IMAGES.files() {
+	for (file, name) in files.iter().zip(NAMES.lines()) {
 		let image = image::load_from_memory(file.contents()).unwrap().into_rgb8();
 		let buffer = SharedPixelBuffer::<Rgb8Pixel>::clone_from_slice(image.as_raw(), image.width(), image.height());
 		let i = Image::from_rgb8(buffer);
-		let s = file.path().to_str().unwrap();
-		images.push((i, s.strip_prefix("Achievement_").unwrap().strip_suffix("_icon.png").unwrap().to_string()));
+		images.push((i, name.to_string()));
 	}
 	images
+}
+
+fn load_achievement_data() -> Vec<bool> {
+	use std::{
+		fs,
+		path,
+	};
+	let bytes = fs::read(path::Path::new(r"E:\Steam\userdata\140201072\250900\remote\rep_persistentgamedata3.dat")).expect("Couldn't open file");
+	bytes[33..637+33].iter().fold(Vec::<bool>::new(), |mut acc, x| {
+		acc.push( *x != 0);
+		acc
+	})
 }
 
 fn main() {
 	use slint::Model;
 	let images = imbed_images();
-	let app = App::new().unwrap();
-	let icons = std::rc::Rc::new(slint::VecModel::from(images.iter().fold(Vec::<AchievementIcon>::new(), | mut acc, (x,s)| {
-		acc.push(AchievementIcon {image: x.clone(), name: s.into()});
+	let achievements = load_achievement_data();
+	let vec = slint::VecModel::from(images.iter().zip(achievements.iter()).fold(Vec::<AchievementIcon>::new(), | mut acc, ((x,s), b )| {
+		acc.push(AchievementIcon {image: x.clone(), name: s.into(), unlocked: *b});
 		acc
-	})));
+	}));
+
+	let app = App::new().unwrap();
+	let icons = std::rc::Rc::new(vec);
 	app.set_icons(icons.into());
 
 	app.run().unwrap();
