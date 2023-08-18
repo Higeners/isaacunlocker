@@ -1,23 +1,26 @@
-#![windows_subsystem = "windows"]
-use std::{collections::HashMap, rc::Rc, path::Path, fs};
+//#![windows_subsystem = "windows"]
+use std::{collections::HashMap, rc::Rc, path::Path, fs, borrow::BorrowMut};
 
 use find_all::FindAll;
 use lazy_static::lazy_static;
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
 slint::slint! {
-	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button} from "std-widgets.slint";
+	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button, ComboBox} from "std-widgets.slint";
 	import "./src/upheavtt.ttf";
 	struct AchievementIcon {
 		image: image,
 		name: string,
+	}
+	struct Achievement {
 		unlocked: bool,
 		id: int,
+
 	}
 
 	export global Search {
 		in-out property <[int]> indexes;
-		in-out property <[AchievementIcon]> icons: [
+		in property <[AchievementIcon]> icons: [
 			{image: @image-url("images/1.png")},
 			{image: @image-url("images/1.png")},
 			{image: @image-url("images/1.png")},
@@ -31,9 +34,11 @@ slint::slint! {
 			{image: @image-url("images/1.png")},
 			{image: @image-url("images/1.png")},
 		];
+		in-out property <[Achievement]> achievements;
+		in-out property <int> Savefile: 1;
 		callback range_change(int, int);
 		callback search_change(string);
-
+		callback select_save(int);
 	}
 	export global UnlockAchievements {
 		callback unlock();
@@ -42,7 +47,7 @@ slint::slint! {
 	export component Icon inherits Image {
 		width: 60px;
 		height: 60px;
-		in-out property <bool> has-unlocked: Search.icons[id].unlocked;
+		in-out property <bool> has-unlocked: Search.achievements[id].unlocked;
 		in property <int> id;
 		rect := Rectangle {
 			callback pressed;
@@ -52,7 +57,7 @@ slint::slint! {
 				}
 			}
 			pressed => {
-				Search.icons[id].unlocked = !Search.icons[id].unlocked;
+				Search.achievements[id].unlocked = !Search.achievements[id].unlocked;
 				
 			}
 			border-width: 0px;
@@ -83,6 +88,7 @@ slint::slint! {
 		in property <string> input-title;
 		in property <color> background-color;
 		in property <color> font-color;
+		in property <string> font-family;
 		out property <string> text;
 		callback edited;
 		HorizontalBox {
@@ -91,11 +97,14 @@ slint::slint! {
 			Text{
 				font-size: root.font-size;
 				text: input-title;
+				font-family: root.font-family;
 			}
 			textin:= TextInput {
-				wrap: word-wrap;
-				single-line: false;
+				wrap: no-wrap;
+				single-line: true;
 				font-size: root.font-size;
+				
+				font-family: root.font-family;
 				color: font-color;
 				edited => {
 					text = self.text;
@@ -142,6 +151,7 @@ slint::slint! {
 				search:= InputField {
 					input-title: "Search:";
 					font-size: 40px;
+					font-family: "Upheaval TT (BRK)";
 					border-width: 2px;
 					background-color: gray.darker(40%);
 					font-color: white;
@@ -156,6 +166,7 @@ slint::slint! {
 					range-from:= InputField {
 						input-title: "Range of achievements:";
 						font-size: 40px;
+						font-family: "Upheaval TT (BRK)";
 						border-width: 2px;
 						background-color: gray.darker(40%);
 						font-color: white;
@@ -166,6 +177,8 @@ slint::slint! {
 					range-to:= InputField {
 						input-title: "-";
 						font-size: 40px;
+						font-family: "Upheaval TT (BRK)";
+						
 						border-width: 2px;
 						background-color: gray.darker(40%);
 						font-color: white;
@@ -173,6 +186,25 @@ slint::slint! {
 							Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 637);
 						}
 					}
+				}
+				HorizontalLayout {
+					alignment: start;
+					Text {
+						font-size: 40px;
+						text: "Savefile: ";
+						font-family: "Upheaval TT (BRK)";
+					}
+					ComboBox { 
+						padding-left: 10px;
+						width: 100px;
+						
+						model: [1,2,3];
+						current-value: Search.Savefile;
+						selected(ind) => {
+							Search.Savefile = ind.to-float();
+							Search.select-save(ind.to-float());
+						}
+					}	
 				}
 				Button { 
 					text: "Apply";
@@ -194,11 +226,11 @@ slint::slint! {
 						Icon {
 							
 							source: Search.icons[index].image;
-							has-unlocked: Search.icons[index].unlocked;
-							id: Search.icons[index].id;
+							has-unlocked: Search.achievements[index].unlocked;
+							id: Search.achievements[index].id;
 						}
 						Text {
-							text: Search.icons[index].id + 1;
+							text: Search.achievements[index].id + 1;
 							font-weight: 500;
 							font-size: 16px;
 							font-family: "Upheaval TT (BRK)";
@@ -249,7 +281,7 @@ lazy_static! {
 		for p in fs::read_dir(path + r"\userdata").unwrap() {
 			for ps in fs::read_dir(p.unwrap().path()).unwrap() {
 				if ps.as_ref().unwrap().file_name() == "250900"{
-					return ps.unwrap().path().to_str().unwrap().to_string() + r"\remote\rep_persistentgamedata3.dat";
+					return ps.unwrap().path().to_str().unwrap().to_string() + r"\remote";
 				}
 	
 			}
@@ -258,8 +290,9 @@ lazy_static! {
 	};
 }
 
-fn load_achievement_data() -> Vec<bool> {
-	let bytes = fs::read(Path::new(ISAAC_FOLDER.as_str())).expect("Couldn't open file");
+fn load_achievement_data(savefile: i32) -> Vec<bool> {
+	let path = ISAAC_FOLDER.to_string() + format!("\\rep_persistentgamedata{savefile}.dat").as_str();
+	let bytes = fs::read(Path::new(path.as_str())).expect("Couldn't open file");
 	bytes[33..637+33].iter().fold(Vec::<bool>::new(), |mut acc, x| {
 		acc.push( *x != 0);
 		acc
@@ -267,15 +300,16 @@ fn load_achievement_data() -> Vec<bool> {
 	
 }
 
-fn unlock_achievements(vec: Vec<u8>) {
+fn unlock_achievements(vec: Vec<u8>, savefile: i32) {
+	let path = ISAAC_FOLDER.to_string() + format!("\\rep_persistentgamedata{savefile}.dat").as_str();
 	
-	let mut bytes = fs::read(Path::new(ISAAC_FOLDER.as_str())).expect("Couldn't open file");
+	let mut bytes = fs::read(Path::new(path.as_str())).expect("Couldn't open file");
 	bytes[33..637+33].copy_from_slice(&vec);
 	let check = check_sum(bytes[0x10..(bytes.len()-4) as usize].to_vec());
 	let check: [u8; 4] = unsafe { std::mem::transmute(check.to_le()) };
 	let len = bytes.len();
 	bytes[(len-4)..len].copy_from_slice(&check);
-	fs::write(Path::new(ISAAC_FOLDER.as_str()), bytes).expect("Failed to write to file");
+	fs::write(Path::new(path.as_str()), bytes).expect("Failed to write to file");
 }
 
 fn check_sum(buf: Vec<u8>) -> u32 {
@@ -324,32 +358,50 @@ fn check_sum(buf: Vec<u8>) -> u32 {
 
 fn main() {
 	use slint::Model;
+	let app = App::new().unwrap();
 	
-	let achievements = {
+	let icons = {
 		let images = imbed_images();
-		let achievements = load_achievement_data();
 		let mut arr = vec![];
-		for (i, ((im, s), b)) in images.iter().zip(achievements.iter()).enumerate(){
-			arr.push(AchievementIcon {image: im.clone(), name: s.into(), unlocked: *b, id: i as i32});
+		for (im, s) in images.iter(){
+			arr.push(AchievementIcon {image: im.clone(), name: s.into()});
 		}
 		arr
 	};
-	let app = App::new().unwrap();
+	let achievements = load_achievement_data(app.global::<Search>().get_Savefile()).iter().enumerate().fold( Vec::<Achievement>::new(), |mut acc, (x, i)| {
+		acc.push(Achievement {id: x as i32, unlocked: *i});
+		acc
+	});
+	let vec = slint::VecModel::from(icons);
+	
+	let icons = std::rc::Rc::new(vec);
+	let vec = slint::VecModel::from(achievements);
+	let achievements = std::rc::Rc::new(vec);
 	let weak1 = app.as_weak();
 	let weak2 = app.as_weak();
-	let vec = slint::VecModel::from(achievements);
-
-	let icons = std::rc::Rc::new(vec);
-	
+	let saveapp = app.as_weak();
 	app.global::<Search>().set_icons(icons.clone().into());
+	app.global::<Search>().set_achievements(achievements.clone().into());
+	let saveachievements = Rc::downgrade(&achievements);
 	app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..637).collect::<Vec<i32>>())).into());
+	app.global::<Search>().on_select_save(move |save| {
+		let achievements = saveachievements.upgrade().unwrap();
+		let save_data = load_achievement_data(save);
+		achievements.set_vec(save_data.iter().enumerate().fold( Vec::<Achievement>::new(), |mut acc, (x, i)| {
+			acc.push(Achievement {id: x as i32, unlocked: *i});
+			acc
+		}));
+		
+		
+		
+	});
 
 	app.global::<Search>().on_range_change(move |x, y| {
 		let app = weak1.upgrade().unwrap();
 		if x > y || x < 0 || y > 637 {
 			return;
 		}
-		app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(((x-1)..y).collect::<Vec<i32>>())).into());
+		app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(((x-1).max(0)..y).collect::<Vec<i32>>())).into());
 	});
 	app.global::<Search>().on_search_change(move |s| {
 		let app = weak2.upgrade().unwrap();
@@ -360,13 +412,15 @@ fn main() {
 
 		}
 	});
-
+	let unlockweak = app.as_weak();
 	app.global::<UnlockAchievements>().on_unlock( move || {
-		unlock_achievements(icons.iter().fold( Vec::<u8>::new(), |mut acc, x| {
+		let app = unlockweak.upgrade().unwrap();
+		unlock_achievements(achievements.iter().fold( Vec::<u8>::new(), |mut acc, x| {
 			acc.push(x.unlocked as u8);
 			acc
-		}));
+		}), app.global::<Search>().get_Savefile());
 	});
+
 
 	app.run().unwrap();
 }
