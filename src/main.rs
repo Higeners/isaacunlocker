@@ -207,7 +207,7 @@ slint::slint! {
 					}	
 				}
 				Button { 
-					text: "Apply";
+					text: "Unlock";
 					preferred-width: 100px;
 					clicked => {
 						UnlockAchievements.unlock();
@@ -406,7 +406,7 @@ fn main() {
 	app.global::<Search>().on_search_change(move |s| {
 		let app = weak2.upgrade().unwrap();
 		let sa: String = s.into();
-		let n = NAMES.lines().into_iter().find_all( |st| st.contains(sa.as_str()));
+		let n = NAMES.lines().into_iter().find_all( |st| st.to_lowercase().contains(sa.to_lowercase().as_str()));
 		if let Some(ns) = n {
 			app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(ns.iter().map(|x| *x as i32).collect::<Vec<i32>>())).into());
 
