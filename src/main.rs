@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use find_all::FindAll;
 
@@ -14,15 +14,34 @@ slint::slint! {
 	}
 
 	export global Search {
+		in-out property <[int]> indexes;
+		in-out property <[AchievementIcon]> icons: [
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+			{image: @image-url("images/1.png")},
+		];
 		callback range_change(int, int);
 		callback search_change(string);
 
+	}
+	export global UnlockAchievements {
+		callback unlock();
 	}
 
 	export component Icon inherits Image {
 		width: 60px;
 		height: 60px;
-		in-out property <bool> has-unlocked;
+		in-out property <bool> has-unlocked: Search.icons[id].unlocked;
+		in property <int> id;
 		rect := Rectangle {
 			callback pressed;
 			ta:= TouchArea { 
@@ -31,7 +50,8 @@ slint::slint! {
 				}
 			}
 			pressed => {
-				root.has-unlocked = !root.has-unlocked;
+				Search.icons[id].unlocked = !Search.icons[id].unlocked;
+				
 			}
 			border-width: 0px;
 			border-radius: 2px;
@@ -101,22 +121,9 @@ slint::slint! {
 		preferred-width: 600px;
 		preferred-height: 200px;
 		background: #202325;
-		in property <[AchievementIcon]> icons: [
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-			{image: @image-url("images/1.png")},
-		];
+
 		property <int> list-width: 16;//Math.max(Math.ceil(self.width / 100px), 2);
-		property <int> list-height: Math.ceil(icons.length / list-width);
+		property <int> list-height: Math.ceil(Search.indexes.length / list-width);
 		Rectangle {
 			background: transparent;
 			width: input-tab.width;
@@ -165,34 +172,36 @@ slint::slint! {
 						}
 					}
 				}
-				CheckBox { 
-					text: "Unlocked";
-				}
 				Button { 
 					text: "Apply";
 					preferred-width: 100px;
+					clicked => {
+						UnlockAchievements.unlock();
+					}
 				 }
 		}
 			ListView  {
 				for i in list-height : HorizontalLayout{
 					padding: 4px;
 					spacing: 4px;
-					property <int> list_actual_width: Math.min(icons.length - i * list-width, list-width);
+					property <int> list_actual_width: Math.min(Search.indexes.length - i * list-width, list-width);
+					
 					for t in list_actual_width : VerticalLayout {
-						property <int> index: t + i * list-width;
+						property <int> index: Search.indexes[t + i * list-width];
 						width: 100px;
 						Icon {
 							
-							source: icons[index].image;
-							has-unlocked: icons[index].unlocked;
+							source: Search.icons[index].image;
+							has-unlocked: Search.icons[index].unlocked;
+							id: Search.icons[index].id;
 						}
 						Text {
-							text: icons[index].id;
+							text: Search.icons[index].id + 1;
 							font-weight: 500;
 							font-size: 16px;
 							font-family: "Upheaval TT (BRK)";
 						}Text {
-							text: icons[index].name;
+							text: Search.icons[index].name;
 							font-weight: 500;
 							font-size: 16px;
 							font-family: "Upheaval TT (BRK)";
@@ -242,13 +251,6 @@ fn load_achievement_data() -> Vec<bool> {
 	})
 }
 
-fn change_icons(app: &App, vec: Vec<AchievementIcon>) {
-	let vec = slint::VecModel::from(vec);
-
-	let icons = std::rc::Rc::new(vec);
-	
-	app.set_icons(icons.into());
-}
 
 fn main() {
 	use slint::Model;
@@ -272,30 +274,34 @@ fn main() {
 	let app = App::new().unwrap();
 	let weak1 = app.as_weak();
 	let weak2 = app.as_weak();
-	let ra = achievements.clone();
-	change_icons(&app, achievements.clone());
+	let vec = slint::VecModel::from(achievements);
+
+	let icons = std::rc::Rc::new(vec);
+	
+	app.global::<Search>().set_icons(icons.clone().into());
+	app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..637).collect::<Vec<i32>>())).into());
+
 	app.global::<Search>().on_range_change(move |x, y| {
 		let app = weak1.upgrade().unwrap();
 		if x > y || x < 0 || y > 637 {
 			return;
 		}
-		let vec = ra[x as usize..y as usize].to_vec();
-		change_icons(&app, vec);
+		app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((x..y).collect::<Vec<i32>>())).into());
 	});
 	app.global::<Search>().on_search_change(move |s| {
 		let app = weak2.upgrade().unwrap();
 		let sa: String = s.into();
 		let n = NAMES.lines().into_iter().find_all( |st| st.contains(sa.as_str()));
-		let ac = {
-			let mut v = vec![];
-			if let Some(num) = n {
-				for i in num {
-					v.push(achievements.clone()[i as usize].clone());
-				}
-			}
-			v
-		};
-		change_icons(&app, ac);
+		if let Some(ns) = n {
+			app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(ns.iter().map(|x| *x as i32).collect::<Vec<i32>>())).into());
+
+		}
+	});
+
+	let unlockweak = app.as_weak();
+	app.global::<UnlockAchievements>().on_unlock( move || {
+		let app = unlockweak.upgrade().unwrap();
+		println!("{:?}", icons.iter().next().unwrap());
 	});
 
 	app.run().unwrap();
