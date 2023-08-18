@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 //#![windows_subsystem = "windows"]
 slint::slint! {
 	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button} from "std-widgets.slint";
@@ -6,6 +8,13 @@ slint::slint! {
 		image: image,
 		name: string,
 		unlocked: bool,
+		id: int,
+	}
+
+	export global Search {
+		callback range_change(int, int);
+		callback search_change();
+
 	}
 
 	export component Icon inherits Image {
@@ -51,6 +60,7 @@ slint::slint! {
 		in property <color> background-color;
 		in property <color> font-color;
 		out property <string> text;
+		callback edited;
 		HorizontalBox {
 			alignment: start;
 			spacing: 10px;
@@ -63,7 +73,10 @@ slint::slint! {
 				single-line: false;
 				font-size: root.font-size;
 				color: font-color;
-				edited => {text = self.text}
+				edited => {
+					text = self.text;
+					root.edited()
+				}
 			}
 			
 		}
@@ -83,7 +96,7 @@ slint::slint! {
 	export component App inherits Window {
 		title: "Isaac Achievement Unlocker";
 		min-width: 200px;
-		preferred-width: 400px;
+		preferred-width: 600px;
 		preferred-height: 200px;
 		background: #202325;
 		in property <[AchievementIcon]> icons: [
@@ -115,7 +128,7 @@ slint::slint! {
 		VerticalLayout {
 			input-tab:= VerticalLayout {
 				
-				InputField {
+				search:= InputField {
 					input-title: "Search:";
 					font-size: 40px;
 					border-width: 2px;
@@ -126,19 +139,25 @@ slint::slint! {
 					padding: 0px;
 					spacing: 0px;
 					alignment: start;
-					InputField {
+					range-from:= InputField {
 						input-title: "Range of achievements:";
 						font-size: 40px;
 						border-width: 2px;
 						background-color: gray.darker(40%);
 						font-color: white;
+						edited => {
+							Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 637);
+						}
 					}
-					InputField {
+					range-to:= InputField {
 						input-title: "-";
 						font-size: 40px;
 						border-width: 2px;
 						background-color: gray.darker(40%);
 						font-color: white;
+						edited => {
+							Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 637);
+						}
 					}
 				}
 				CheckBox { 
@@ -163,7 +182,7 @@ slint::slint! {
 							has-unlocked: icons[index].unlocked;
 						}
 						Text {
-							text: index + 1;
+							text: icons[index].id;
 							font-weight: 500;
 							font-size: 16px;
 							font-family: "Upheaval TT (BRK)";
@@ -218,18 +237,38 @@ fn load_achievement_data() -> Vec<bool> {
 	})
 }
 
+fn change_icons(app: &App, vec: Vec<AchievementIcon>) {
+	let vec = slint::VecModel::from(vec);
+
+	let icons = std::rc::Rc::new(vec);
+	
+	app.set_icons(icons.into());
+}
+
 fn main() {
 	use slint::Model;
-	let images = imbed_images();
-	let achievements = load_achievement_data();
-	let vec = slint::VecModel::from(images.iter().zip(achievements.iter()).fold(Vec::<AchievementIcon>::new(), | mut acc, ((x,s), b )| {
-		acc.push(AchievementIcon {image: x.clone(), name: s.into(), unlocked: *b});
-		acc
-	}));
-
+	
+	let achievements = {
+		let images = imbed_images();
+		let achievements = load_achievement_data();
+		let mut arr = vec![];
+		for (i, ((im, s), b)) in images.iter().zip(achievements.iter()).enumerate(){
+			arr.push(AchievementIcon {image: im.clone(), name: s.into(), unlocked: *b, id: i as i32});
+		}
+		arr
+	};
 	let app = App::new().unwrap();
-	let icons = std::rc::Rc::new(vec);
-	app.set_icons(icons.into());
+	let weak = app.as_weak();
+	change_icons(&app, achievements.clone());
+	app.global::<Search>().on_range_change(move |x, y| {
+		let app = weak.upgrade().unwrap();
+		if x > y || x < 0 || y > 637 {
+			return;
+		}
+		let vec = achievements[x as usize..y as usize].to_vec();
+		change_icons(&app, vec);
+	});
+
 
 	app.run().unwrap();
 }
