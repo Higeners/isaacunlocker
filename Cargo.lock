@@ -1078,6 +1078,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "find_all"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8a3b40b97938cd51e8e285e12019dcd28b7e71d7398b6074d92308cebc03888f"
+
+[[package]]
 name = "flate2"
 version = "1.0.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1731,6 +1737,7 @@ dependencies = [
 name = "isaacunlocker"
 version = "0.1.0"
 dependencies = [
+ "find_all",
  "image",
  "include_dir",
  "slint",

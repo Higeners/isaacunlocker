@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use find_all::FindAll;
+
 //#![windows_subsystem = "windows"]
 slint::slint! {
 	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button} from "std-widgets.slint";
@@ -13,7 +15,7 @@ slint::slint! {
 
 	export global Search {
 		callback range_change(int, int);
-		callback search_change();
+		callback search_change(string);
 
 	}
 
@@ -134,6 +136,9 @@ slint::slint! {
 					border-width: 2px;
 					background-color: gray.darker(40%);
 					font-color: white;
+					edited => {
+						Search.search-change(self.text);
+					}
 				}
 				HorizontalBox {
 					padding: 0px;
@@ -199,12 +204,12 @@ slint::slint! {
 	}
 	}
 }
+const NAMES: &str = include_str!("Achievements.txt");
 
 fn imbed_images() -> Vec<(slint::Image, String)>{
 	use include_dir::*;
 	use slint::*;
 	const IMAGES: Dir = include_dir!("./images");
-	const NAMES: &str = include_str!("Achievements.txt");
 	let mut files: Vec<&File> = IMAGES.files().collect();
 	files.sort_by(|a, b| {
 
@@ -257,18 +262,41 @@ fn main() {
 		}
 		arr
 	};
+	let names = {
+		let mut hash: HashMap<String, i32> = HashMap::new();
+		for a in &achievements {
+			hash.insert(a.name.clone().into(), a.id);
+		}
+		hash
+	};
 	let app = App::new().unwrap();
-	let weak = app.as_weak();
+	let weak1 = app.as_weak();
+	let weak2 = app.as_weak();
+	let ra = achievements.clone();
 	change_icons(&app, achievements.clone());
 	app.global::<Search>().on_range_change(move |x, y| {
-		let app = weak.upgrade().unwrap();
+		let app = weak1.upgrade().unwrap();
 		if x > y || x < 0 || y > 637 {
 			return;
 		}
-		let vec = achievements[x as usize..y as usize].to_vec();
+		let vec = ra[x as usize..y as usize].to_vec();
 		change_icons(&app, vec);
 	});
-
+	app.global::<Search>().on_search_change(move |s| {
+		let app = weak2.upgrade().unwrap();
+		let sa: String = s.into();
+		let n = NAMES.lines().into_iter().find_all( |st| st.contains(sa.as_str()));
+		let ac = {
+			let mut v = vec![];
+			if let Some(num) = n {
+				for i in num {
+					v.push(achievements.clone()[i as usize].clone());
+				}
+			}
+			v
+		};
+		change_icons(&app, ac);
+	});
 
 	app.run().unwrap();
 }
