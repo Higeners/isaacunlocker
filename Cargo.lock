@@ -1740,7 +1740,9 @@ dependencies = [
  "find_all",
  "image",
  "include_dir",
+ "lazy_static",
  "slint",
+ "winreg",
 ]
 
 [[package]]
@@ -4018,6 +4020,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5504cc7644f4b593cbc05c4a55bf9bd4e94b867c3c0bd440934174d50482427d"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "winreg"
+version = "0.50.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "524e57b2c537c0f9b1e69f1965311ec12182b4122e45035b1508cd24d2adadb1"
+dependencies = [
+ "cfg-if",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]

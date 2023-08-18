@@ -1,8 +1,10 @@
-use std::{collections::HashMap, rc::Rc};
+#![windows_subsystem = "windows"]
+use std::{collections::HashMap, rc::Rc, path::Path, fs};
 
 use find_all::FindAll;
+use lazy_static::lazy_static;
+use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 
-//#![windows_subsystem = "windows"]
 slint::slint! {
 	import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button} from "std-widgets.slint";
 	import "./src/upheavtt.ttf";
@@ -239,31 +241,41 @@ fn imbed_images() -> Vec<(slint::Image, String)>{
 	images
 }
 
-fn load_achievement_data() -> Vec<bool> {
-	use std::{
-		fs,
-		path,
+lazy_static! {
+	pub static ref ISAAC_FOLDER: String = {
+		let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+		let steam = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam").expect("Steam is not installed");
+		let path: String = steam.get_value("InstallPath").expect("Failed to find Steam folder");
+		for p in fs::read_dir(path + r"\userdata").unwrap() {
+			for ps in fs::read_dir(p.unwrap().path()).unwrap() {
+				if ps.as_ref().unwrap().file_name() == "250900"{
+					return ps.unwrap().path().to_str().unwrap().to_string() + r"\remote\rep_persistentgamedata3.dat";
+				}
+	
+			}
+		};
+		String::new()
 	};
-	let bytes = fs::read(path::Path::new(r"E:\Steam\userdata\140201072\250900\remote\rep_persistentgamedata3.dat")).expect("Couldn't open file");
+}
+
+fn load_achievement_data() -> Vec<bool> {
+	let bytes = fs::read(Path::new(ISAAC_FOLDER.as_str())).expect("Couldn't open file");
 	bytes[33..637+33].iter().fold(Vec::<bool>::new(), |mut acc, x| {
 		acc.push( *x != 0);
 		acc
 	})
+	
 }
 
 fn unlock_achievements(vec: Vec<u8>) {
-	use std::{
-		fs,
-		path,
-	};
-	let mut bytes = fs::read(path::Path::new(r"E:\Steam\userdata\140201072\250900\remote\rep_persistentgamedata3.dat")).expect("Couldn't open file");
+	
+	let mut bytes = fs::read(Path::new(ISAAC_FOLDER.as_str())).expect("Couldn't open file");
 	bytes[33..637+33].copy_from_slice(&vec);
 	let check = check_sum(bytes[0x10..(bytes.len()-4) as usize].to_vec());
-	println!("\n{:#X}", check);
 	let check: [u8; 4] = unsafe { std::mem::transmute(check.to_le()) };
 	let len = bytes.len();
 	bytes[(len-4)..len].copy_from_slice(&check);
-	fs::write(path::Path::new(r"E:\Steam\userdata\140201072\250900\remote\rep_persistentgamedata3.dat"), bytes).expect("Failed to write to file");
+	fs::write(Path::new(ISAAC_FOLDER.as_str()), bytes).expect("Failed to write to file");
 }
 
 fn check_sum(buf: Vec<u8>) -> u32 {
@@ -304,7 +316,6 @@ fn check_sum(buf: Vec<u8>) -> u32 {
 	];
 	let mut check: u32 = !0xFEDCBA76;
 	for v in buf {
-		print!("{:X} ", v);
 		check = CRC_TABLE[(((check as u8 & 0xFF)) ^ v) as usize] ^ (check >> 8);
 	}
 	return !check;
