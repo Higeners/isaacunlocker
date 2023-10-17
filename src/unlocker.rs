@@ -1,5 +1,7 @@
 use crate::savedata::{
-	TotalData
+	TotalData,
+	ACHIEVEMENTS_TOTAL,
+	ITEMS_TOTAL
 };
 use crate::*;
 use slint::*;
@@ -125,8 +127,8 @@ impl Unlocker {
 		self.app.global::<Search>().set_icons(icons.clone().into());
 		self.app.global::<Search>().set_achievements(achievements.clone().into());
 	
-		self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..637).collect::<Vec<i32>>())).into());
-		self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from((0..717).collect::<Vec<i32>>())).into());
+		self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
+		self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL - 1) as i32).collect::<Vec<i32>>())).into());
 		self.change_save_callback(&achievements, &items);
 		self.range_change_callback();
 		self.search_callback();
@@ -158,12 +160,11 @@ impl Unlocker {
 	fn range_change_callback(&self) {
 		let weak_app = self.app.as_weak();
 
-		self.app.global::<Search>().on_range_change(move |x, y| {
+		self.app.global::<Search>().on_range_change(move |x: i32, y| {
 			let app = weak_app.upgrade().unwrap();
-			if x > y || x < 0 || y > 637 {
-				return;
-			}
-			app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(((x-1).max(0)..y).collect::<Vec<i32>>())).into());
+			
+			app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(((x-1).max(0).min(ACHIEVEMENTS_TOTAL as i32)..y.min(ACHIEVEMENTS_TOTAL as i32)).collect::<Vec<i32>>())).into());
+			app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from(((x-1).max(0).min(ITEMS_TOTAL as i32 - 1)..y.min(ITEMS_TOTAL as i32 - 1)).collect::<Vec<i32>>())).into());
 		});
 
 	}
@@ -174,10 +175,14 @@ impl Unlocker {
 		self.app.global::<Search>().on_search_change(move |s| {
 			let app = weak_app.upgrade().unwrap();
 			let sa: String = s.into();
-			let n = ACHIEVEMENTS_NAMES.lines().into_iter().find_all( |st| st.to_lowercase().contains(sa.to_lowercase().as_str()));
-			if let Some(ns) = n {
+			let anames = ACHIEVEMENTS_NAMES.lines().into_iter().find_all( |st| st.to_lowercase().contains(sa.to_lowercase().as_str()));
+			let inames = ITEMS_NAMES.lines().into_iter().find_all( |st| st.to_lowercase().contains(sa.to_lowercase().as_str()));
+			if let Some(ns) = anames {
 				app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(ns.iter().map(|x| *x as i32).collect::<Vec<i32>>())).into());
-	
+			}
+			if let Some(ns) = inames {
+				app.global::<Search>()
+				.set_items_indexes(Rc::new(slint::VecModel::from(ns.iter().map(|x| *x as i32).collect::<Vec<i32>>())).into());
 			}
 		});
 	}
@@ -192,7 +197,7 @@ impl Unlocker {
 			let app = weak_app.upgrade().unwrap();
 			let saves = weak_saves.upgrade().unwrap();
 			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].unwrap()
-				.unlock_achievements(achievements.iter().enumerate().fold( [false; 637], |mut acc, (i,x)| {
+				.unlock_achievements(achievements.iter().enumerate().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, (i,x)| {
 					acc[i] = x.unlocked;
 					acc
 				}));

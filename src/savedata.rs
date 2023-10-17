@@ -1,17 +1,15 @@
 use crate::ISAAC_FOLDER;
 use std::{
-	io::{
-		Seek,
-		Read,
-		SeekFrom,
+	fs::{
+		File,
+		OpenOptions, self,
 	},
-	fs::File,
-	path::Path, os::windows::prelude::FileExt,
+	os::windows::prelude::FileExt,
 };
 
 
-const ACHIEVEMENTS_TOTAL: usize = 637;
-const ITEMS_TOTAL: usize = 718;
+pub const ACHIEVEMENTS_TOTAL: usize = 637;
+pub const ITEMS_TOTAL: usize = 718;
 
 const ACHIEVEMENT_OFFSET: u64 = 33;
 const ITEMS_OFFSET: u64 = 0xABB;
@@ -117,12 +115,20 @@ impl SaveData {
 
 	pub fn unlock_achievements(&self, ach: [bool; 637]) {
 		let path = ISAAC_FOLDER.to_string() + format!("\\rep_persistentgamedata{}.dat", self.saveid).as_str();
-		let file = File::open(path).expect("Couldn't open savefile");
+		let file = OpenOptions::new()
+			.read(true)
+			.write(true)
+			.open(&path).expect("Couldn't open savefile");
 
 		file.seek_write(&ach.iter().enumerate().fold( [0 as u8; 637], |mut acc, (i, b)| {
 			acc[i] = *b as u8;
 			acc
 		}), ACHIEVEMENT_OFFSET).expect("Failed to write to savefile");
-
+		let buf: Vec<u8> = fs::read(&path).expect("Failed to read file");
+		let checksum = check_sum(buf[0x10..buf.len() - 4].to_vec());
+		let checksum: [u8; 4] = unsafe {
+			std::mem::transmute(checksum.to_le())
+		};
+		file.seek_write(&checksum, buf.len() as u64 - 4).expect("Failed to write checksum");
 	}
 }
