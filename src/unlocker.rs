@@ -27,9 +27,9 @@ fn imbed_achivement_images() -> Vec<(slint::Image, String)>{
 	});
 	let mut images: Vec<(slint::Image, String)> = vec![];
 	for (file, name) in files.iter().zip(ACHIEVEMENTS_NAMES.lines()) {
-		let image = image::load_from_memory(file.contents()).unwrap().into_rgb8();
-		let buffer = SharedPixelBuffer::<Rgb8Pixel>::clone_from_slice(image.as_raw(), image.width(), image.height());
-		let i = Image::from_rgb8(buffer);
+		let image = image::load_from_memory(file.contents()).unwrap().into_rgba8();
+		let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(image.as_raw(), image.width(), image.height());
+		let i = Image::from_rgba8(buffer);
 		images.push((i, name.to_string()));
 	}
 	images
@@ -51,9 +51,9 @@ fn imbed_items_images() -> Vec<(slint::Image, String)> {
 	});
 	let mut images: Vec<(slint::Image, String)> = vec![];
 	for (file, name) in files.iter().zip(ITEMS_NAMES.lines()) {
-		let image = image::load_from_memory(file.contents()).unwrap().into_rgb8();
-		let buffer = SharedPixelBuffer::<Rgb8Pixel>::clone_from_slice(image.as_raw(), image.width(), image.height());
-		let i = Image::from_rgb8(buffer);
+		let image = image::load_from_memory(file.contents()).unwrap().into_rgba8();
+		let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(image.as_raw(), image.width(), image.height());
+		let i = Image::from_rgba8(buffer);
 		images.push((i, name.to_string()));
 	}
 	images

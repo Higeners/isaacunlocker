@@ -72,6 +72,7 @@ slint::slint! {
 		width: 60px;
 		height: 60px;
 		in-out property <bool> has-unlocked: Search.achievements[id].unlocked;
+		in property <bool> achievement;
 		in property <int> id;
 		rect := Rectangle {
 			callback pressed;
@@ -81,8 +82,11 @@ slint::slint! {
 				}
 			}
 			pressed => {
-				Search.achievements[id].unlocked = !Search.achievements[id].unlocked;
-				
+				if (root.achievement){
+					Search.achievements[id].unlocked = !Search.achievements[id].unlocked;
+				}else {
+					Search.items[id].unlocked = !Search.items[id].unlocked;
+				}
 			}
 			border-width: 0px;
 			border-radius: 2px;
@@ -156,12 +160,14 @@ slint::slint! {
 	}
 	export component App inherits Window {
 		title: "Isaac Achievement Unlocker";
-		min-width: 200px;
-		preferred-width: 600px;
+		min-width: 420px;
 		preferred-height: 800px;
 		background: #202325;
-
-		property <int> list-width: 16;//Math.max(Math.ceil(self.width / 100px), 2);
+		default-font-family: "Upheaval TT (BRK)";
+		default-font-size: 16px;
+		default-font-weight: 500;
+		icon: @image-url("images/icon.png");
+		property <int> list-width: 10;
 		property <int> item-list-height: Math.ceil(Search.items-indexes.length / list-width);
 		property <int> list-height: Math.ceil(Search.indexes.length / list-width);
 		Rectangle {
@@ -199,7 +205,6 @@ slint::slint! {
 						input-title: tabs.current-index == 0 ? "Range of achievements:" : "Range of items:";
 						
 						font-size: 40px;
-						font-family: "Upheaval TT (BRK)";
 						border-width: 2px;
 						background-color: gray.darker(40%);
 						font-color: white;
@@ -211,7 +216,6 @@ slint::slint! {
 					range-to:= InputField {
 						input-title: "-";
 						font-size: 40px;
-						font-family: "Upheaval TT (BRK)";
 						
 						border-width: 2px;
 						background-color: gray.darker(40%);
@@ -227,7 +231,6 @@ slint::slint! {
 					Text {
 						font-size: 40px;
 						text: "Savefile: ";
-						font-family: "Upheaval TT (BRK)";
 					}
 					ComboBox { 
 						padding-left: 10px;
@@ -274,14 +277,8 @@ slint::slint! {
 							}
 							Text {
 								text: Search.achievements[index].id + 1;
-								font-weight: 500;
-								font-size: 16px;
-								font-family: "Upheaval TT (BRK)";
 							}Text {
 								text: Search.icons[index].name;
-								font-weight: 500;
-								font-size: 16px;
-								font-family: "Upheaval TT (BRK)";
 								wrap: word-wrap;
 							}
 						}
@@ -297,7 +294,6 @@ slint::slint! {
 					padding: 2px;
 					spacing: 2px;
 					property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
-					
 					for t in list_actual_width : VerticalLayout {
 						property <int> index: Search.items-indexes[t + i * list-width];
 						width: 100px;
