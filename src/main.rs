@@ -30,12 +30,20 @@ slint::slint! {
 	export global Search {
 		in property <[string]> saves: [1,2,3];
 		in-out property <[int]> indexes: [
-			0,1,2,3,4,5,6,7,8,9,10,11,12,13
+			0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30
 		];
 		in-out property <[int]> items_indexes: [
 			0,1,2,3,4,5
 		];
 		in property <[IsaacIcon]> icons: [
+			{image: @image-url("images/achievements/1.png"), name: "Lorem ipsum dolor sit amet consectetur adipisicing elit."},
+			{image: @image-url("images/achievements/1.png")},
+			{image: @image-url("images/achievements/1.png")},
+			{image: @image-url("images/achievements/1.png")},
+			{image: @image-url("images/achievements/1.png")},
+			{image: @image-url("images/achievements/1.png")},
+			{image: @image-url("images/achievements/1.png")},
+			{image: @image-url("images/achievements/1.png")},
 			{image: @image-url("images/achievements/1.png")},
 			{image: @image-url("images/achievements/1.png")},
 			{image: @image-url("images/achievements/1.png")},
@@ -50,15 +58,22 @@ slint::slint! {
 			{image: @image-url("images/achievements/1.png")},
 		];
 		in property <[IsaacIcon]> items_icons: [
-			{image: @image-url("images/items/0.png")},
+			{image: @image-url("images/items/0.png"),
+			name: "Sad onion"},
 			{image: @image-url("images/items/1.png")},
 			{image: @image-url("images/items/2.png")},
 			{image: @image-url("images/items/3.png")},
 			{image: @image-url("images/items/4.png")},
 			{image: @image-url("images/items/5.png")},
 		];
-		in-out property <[Achievement]> achievements;
-		in-out property <[Achievement]> items;
+		in-out property <[Achievement]> achievements: [
+			{unlocked: true, id: 0},
+			{unlocked: true, id: 0},
+			{unlocked: true, id: 0},
+		];
+		in-out property <[Achievement]> items: [
+			{unlocked: true, id: 0}
+		];
 		in-out property <int> Savefile: 1;
 		callback range_change(int, int);
 		callback search_change(string);
@@ -84,8 +99,6 @@ slint::slint! {
 			pressed => {
 				if (root.achievement){
 					Search.achievements[id].unlocked = !Search.achievements[id].unlocked;
-				}else {
-					Search.items[id].unlocked = !Search.items[id].unlocked;
 				}
 			}
 			border-width: 0px;
@@ -93,18 +106,33 @@ slint::slint! {
 			border-color: #b44160;
 
 			animate border-width {duration: 100ms ; easing: ease-in;}
+			animate border-color {
+				duration: 200ms ; easing: ease-in;
+			}
 			states [ 
-				unlocked when root.has-unlocked : {
+				unlocked_hover when (root.has-unlocked && ta.has-hover ) : {
 					border-width: 3px;
-					border-color: #4188b4;
+					border-color: white;
 				}
-				inactive when !ta.has-hover && !root.has-unlocked : {
-					border-width: 0px;
-				
+				unlocked_ach when (root.achievement && root.has-unlocked) : {
+					border-width: 3px;
+					border-color: @linear-gradient(180deg, #f9f95e, yellow 10%, yellow 70%, #534002);
+					//border-color: #4188b4;
+				}
+				unlocked_item when (!root.achievement && root.has-unlocked) : {
+					border-width: 3px;
+					//border-color: @linear-gradient(180deg, #fa71c3, #f700ff 2%, #f700ff 90%, #680098);
+					border-color: #4c41b4;
+
 				}
 				active when !root.has-unlocked && ta.has-hover: {
 					border-width: 3px;
 					border-color: #b44160;
+					
+				}
+				inactive when !ta.has-hover && !root.has-unlocked : {
+					border-width: 0px;
+					border-color: gray;
 				
 				}
 			]
@@ -161,19 +189,21 @@ slint::slint! {
 	export component App inherits Window {
 		title: "Isaac Achievement Unlocker";
 		min-width: 420px;
+		preferred-width: 1000px;
 		preferred-height: 800px;
-		background: #202325;
+		background: @linear-gradient(0deg, #191a1c, #202528);
 		default-font-family: "Upheaval TT (BRK)";
 		default-font-size: 16px;
 		default-font-weight: 500;
-		icon: @image-url("images/icon.png");
-		property <int> list-width: 10;
+		
+		icon: @image-url("images/readme_icon.png");
+		property <int> list-width: 16;
 		property <int> item-list-height: Math.ceil(Search.items-indexes.length / list-width);
 		property <int> list-height: Math.ceil(Search.indexes.length / list-width);
 		Rectangle {
 			background: transparent;
 			width: input-tab.width;
-			height: input-tab.height + self.border-width;
+			height: input-tab.height; 
 			x: input-tab.x;
 			y: input-tab.y;
 			border-width: 4px;
@@ -183,7 +213,9 @@ slint::slint! {
 		VerticalLayout {
 			input-tab:= VerticalLayout {
 				padding-left: 6px;
-				spacing: 0px;
+				padding-top: 8px;
+				spacing: -4px;
+				
 				search:= InputField {
 					input-title: "Search:";
 					font-size: 40px;
@@ -203,11 +235,10 @@ slint::slint! {
 					alignment: start;
 					range-from:= InputField {
 						input-title: tabs.current-index == 0 ? "Range of achievements:" : "Range of items:";
-						
 						font-size: 40px;
+						font-color: white;
 						border-width: 2px;
 						background-color: gray.darker(40%);
-						font-color: white;
 						edited => {
 							search.clear();
 							Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 637);
@@ -234,8 +265,7 @@ slint::slint! {
 					}
 					ComboBox { 
 						padding-left: 10px;
-						width: 100px;
-						
+						width: 60px;
 						model: Search.saves;
 						current-value: Search.Savefile;
 						selected(ind) => {
@@ -263,23 +293,29 @@ slint::slint! {
 				ListView  {
 					for i in list-height : HorizontalLayout{
 						padding: 4px;
-						spacing: 4px;
+						spacing: 16px;
 						property <int> list_actual_width: Math.min(Search.indexes.length - i * list-width, list-width);
 						
 						for t in list_actual_width : VerticalLayout {
 							property <int> index: Search.indexes[t + i * list-width];
-							width: 100px;
 							Icon {
-								
+								property <length> size: (root.width - 2 * 4px - (list-width - 1) * 16px - 16px) / list-width;
+								width: size;
+								height: size;
+								achievement: true;
 								source: Search.icons[index].image;
 								has-unlocked: Search.achievements[index].unlocked;
 								id: Search.achievements[index].id;
 							}
 							Text {
 								text: Search.achievements[index].id + 1;
-							}Text {
+								horizontal-alignment: center;
+							}
+							Text {
 								text: Search.icons[index].name;
 								wrap: word-wrap;
+								horizontal-alignment: center;
+								font-size: root.width * 1%;
 							}
 						}
 					}
@@ -287,37 +323,36 @@ slint::slint! {
 			}
 			Tab {
 			title: "Items";
-			ListView {
-				property <int> list-height: Math.ceil(Search.items-icons.length / list-width);
+			
+				ListView {
+					property <int> list-height: Math.ceil(Search.items-icons.length / list-width);
 
-				for i in list-height : HorizontalLayout{
-					padding: 2px;
-					spacing: 2px;
-					property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
-					for t in list_actual_width : VerticalLayout {
-						property <int> index: Search.items-indexes[t + i * list-width];
-						width: 100px;
-						
-						Icon {
-							source: Search.items-icons[index].image;
-							has-unlocked: Search.items[index].unlocked;
-							id: Search.items[index].id;
-						}
-						Text {
-							text: Search.items[index].id + 1;
-							font-weight: 500;
-							font-size: 16px;
-							font-family: "Upheaval TT (BRK)";
-						}Text {
-							text: Search.items-icons[index].name;
-							font-weight: 500;
-							font-size: 16px;
-							font-family: "Upheaval TT (BRK)";
-							wrap: word-wrap;
-						}
+					for i in list-height : HorizontalLayout{
+						padding: 4px;
+						spacing: 16px;
+						property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
+						for t in list_actual_width : VerticalLayout {
+							property <int> index: Search.items-indexes[t + i * list-width];
+							Icon {
+								property <length> size: (root.width - parent.padding - (list-width - 1) * 16px) / list-width;
+								width: size;
+								height: size;
+								achievement: false;
+								source: Search.items-icons[index].image;
+								has-unlocked: Search.items[index].unlocked;
+								id: Search.items[index].id;
+							}
+							Text {
+								text: Search.items[index].id + 1;
+							}Text {
+								text: Search.items-icons[index].name;
+								wrap: word-wrap;
+								font-size: root.width * 1%;
+
+							}
 						}
 					}
-			}
+				}
 			}
 		}	
 	}
