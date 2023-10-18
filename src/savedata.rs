@@ -9,7 +9,7 @@ use std::{
 
 
 pub const ACHIEVEMENTS_TOTAL: usize = 637;
-pub const ITEMS_TOTAL: usize = 718;
+pub const ITEMS_TOTAL: usize = 717;
 
 const ACHIEVEMENT_OFFSET: u64 = 33;
 const ITEMS_OFFSET: u64 = 0xABB;
@@ -95,11 +95,11 @@ impl SaveData {
 		let mut buf = [0; 732];
 		file.seek_read(&mut buf, ITEMS_OFFSET).ok()?;
 		let items = {
-			let skips = [43,59,61,235,263,587,613,620,630,648,656,662,666,718];
+			let skips = [43,59,61,235,/*263,*/ 587,613,620,630,648,656,662,666,714, 715,718];
 			let mut s = 0;
 			let mut is = 0;
 			buf.iter().enumerate().fold([false; ITEMS_TOTAL], |mut acc, (i, b)| {
-				if s < 14 && skips[s] == i {
+				if s < skips.len() && (skips[s] - 1) == i {
 					s += 1;
 					acc
 				}else{

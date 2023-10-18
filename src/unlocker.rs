@@ -128,7 +128,7 @@ impl Unlocker {
 		self.app.global::<Search>().set_achievements(achievements.clone().into());
 	
 		self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
-		self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL - 1) as i32).collect::<Vec<i32>>())).into());
+		self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL) as i32).collect::<Vec<i32>>())).into());
 		self.change_save_callback(&achievements, &items);
 		self.range_change_callback();
 		self.search_callback();
@@ -164,7 +164,7 @@ impl Unlocker {
 			let app = weak_app.upgrade().unwrap();
 			
 			app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(((x-1).max(0).min(ACHIEVEMENTS_TOTAL as i32)..y.min(ACHIEVEMENTS_TOTAL as i32)).collect::<Vec<i32>>())).into());
-			app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from(((x-1).max(0).min(ITEMS_TOTAL as i32 - 1)..y.min(ITEMS_TOTAL as i32 - 1)).collect::<Vec<i32>>())).into());
+			app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from(((x-1).max(0).min(ITEMS_TOTAL as i32)..y.min(ITEMS_TOTAL as i32 )).collect::<Vec<i32>>())).into());
 		});
 
 	}

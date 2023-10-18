@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+//#![windows_subsystem = "windows"]
 mod savedata;
 mod unlocker;
 
@@ -287,6 +287,8 @@ slint::slint! {
 				
 			}
 		tabs:= TabWidget {
+			property <length> size: (root.width - 2 * 4px - (list-width - 1) * 16px - 16px) / list-width;
+
 			Tab {
 				title: "Achievements";
 				
@@ -299,7 +301,6 @@ slint::slint! {
 						for t in list_actual_width : VerticalLayout {
 							property <int> index: Search.indexes[t + i * list-width];
 							Icon {
-								property <length> size: (root.width - 2 * 4px - (list-width - 1) * 16px - 16px) / list-width;
 								width: size;
 								height: size;
 								achievement: true;
@@ -334,7 +335,6 @@ slint::slint! {
 						for t in list_actual_width : VerticalLayout {
 							property <int> index: Search.items-indexes[t + i * list-width];
 							Icon {
-								property <length> size: (root.width - parent.padding - (list-width - 1) * 16px) / list-width;
 								width: size;
 								height: size;
 								achievement: false;
