@@ -1,5 +1,6 @@
 use std::env;
 fn main() {
+	slint_build::compile("src/app.slint").unwrap();
     if env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
         use std::{
             fs::{copy, write},
