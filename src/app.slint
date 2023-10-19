@@ -1,4 +1,4 @@
-import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button, ComboBox, TabWidget} from "std-widgets.slint";
+import { GridBox , ScrollView, GroupBox, ListView, HorizontalBox, CheckBox, Button, ComboBox, TabWidget, SpinBox} from "std-widgets.slint";
 import "./upheavtt.ttf";
 struct IsaacIcon {
 	image: image,
@@ -94,9 +94,9 @@ export component Icon inherits Image {
 		border-radius: 2px;
 		border-color: #b44160;
 
-		animate border-width {duration: 100ms ; easing: ease-in;}
+		animate border-width {duration: 100ms ; easing: ease-in-out; }
 		animate border-color {
-			duration: 200ms ; easing: ease-in;
+			duration: 200ms ; easing: ease-in-out;
 		}
 		states [ 
 			unlocked_hover when (root.has-unlocked && ta.has-hover ) : {
@@ -105,12 +105,10 @@ export component Icon inherits Image {
 			}
 			unlocked_ach when (root.achievement && root.has-unlocked) : {
 				border-width: 3px;
-				border-color: @linear-gradient(180deg, #f9f95e, yellow 10%, yellow 70%, #534002);
-				//border-color: #4188b4;
+				border-color: #4188b4;
 			}
 			unlocked_item when (!root.achievement && root.has-unlocked) : {
 				border-width: 3px;
-				//border-color: @linear-gradient(180deg, #fa71c3, #f700ff 2%, #f700ff 90%, #680098);
 				border-color: #4c41b4;
 
 			}
@@ -121,7 +119,7 @@ export component Icon inherits Image {
 			}
 			inactive when !ta.has-hover && !root.has-unlocked : {
 				border-width: 0px;
-				border-color: gray;
+				border-color: transparent;
 			
 			}
 		]
@@ -143,7 +141,7 @@ component InputField {
 	}
 	HorizontalBox {
 		alignment: start;
-		spacing: 10px;
+		spacing: 16px;
 		Text{
 			font-size: root.font-size;
 			text: input-title;
@@ -164,7 +162,7 @@ component InputField {
 	}
 	Rectangle {
 		z: -10;
-		x: textin.x;
+		x: textin.x - 5px;
 		background: background-color;
 		clip : true;
 		width: textin.width + 10px;
@@ -185,8 +183,8 @@ export component App inherits Window {
 	default-font-size: 16px;
 	default-font-weight: 500;
 	
-	icon: @image-url("../images/readme_icon.png");
-	property <int> list-width: 16;
+	icon: @image-url("../images/icon.png");
+	property <int> list-width: tiles-num.value;
 	property <int> item-list-height: Math.ceil(Search.items-indexes.length / list-width);
 	property <int> list-height: Math.ceil(Search.indexes.length / list-width);
 	Rectangle {
@@ -204,18 +202,34 @@ export component App inherits Window {
 			padding-left: 6px;
 			padding-top: 8px;
 			spacing: -4px;
-			
-			search:= InputField {
-				input-title: "Search:";
-				font-size: 40px;
-				font-family: "Upheaval TT (BRK)";
-				border-width: 2px;
-				background-color: gray.darker(40%);
-				font-color: white;
-				edited => {
-					range-from.clear();
-					range-to.clear();
-					Search.search-change(self.text);
+			HorizontalLayout {
+				alignment: space-between;
+				search:= InputField {
+					input-title: "Search:";
+					font-size: 40px;
+					border-width: 2px;
+					background-color: gray.darker(40%);
+					font-color: white;
+					edited => {
+						range-from.clear();
+						range-to.clear();
+						Search.search-change(self.text);
+					}
+				}
+				HorizontalBox {
+					alignment: start;
+					Text {
+						font-size: 40px;
+						text: "Number of tiles: ";
+					}
+					tiles-num:= SpinBox { 
+						
+						width: 100px;
+						height: 40px;
+						minimum: 4;
+						maximum: 32;
+						value: 10;
+					}
 				}
 			}
 			HorizontalBox {

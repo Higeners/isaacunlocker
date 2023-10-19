@@ -1,4 +1,3 @@
-use crate::ISAAC_FOLDER;
 use std::{
 	fs::{
 		File,
@@ -7,6 +6,23 @@ use std::{
 	os::windows::prelude::FileExt,
 };
 
+use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
+lazy_static::lazy_static! {
+	pub static ref ISAAC_FOLDER: String = {
+		let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+		let steam = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam").expect("Steam is not installed");
+		let path: String = steam.get_value("InstallPath").expect("Failed to find Steam folder");
+		for p in fs::read_dir(path + r"\userdata").unwrap() {
+			for ps in fs::read_dir(p.unwrap().path()).unwrap() {
+				if ps.as_ref().unwrap().file_name() == "250900"{
+					return ps.unwrap().path().to_str().unwrap().to_string() + r"\remote";
+				}
+	
+			}
+		};
+		String::new()
+	};
+}
 
 pub const ACHIEVEMENTS_TOTAL: usize = 637;
 pub const ITEMS_TOTAL: usize = 717;
@@ -95,7 +111,7 @@ impl SaveData {
 		let mut buf = [0; 732];
 		file.seek_read(&mut buf, ITEMS_OFFSET).ok()?;
 		let items = {
-			let skips = [43,59,61,235,/*263,*/ 587,613,620,630,648,656,662,666,714, 715,718];
+			let skips = [43,59,61,235,587,613,620,630,648,656,662,666,714,715,718];
 			let mut s = 0;
 			let mut is = 0;
 			buf.iter().enumerate().fold([false; ITEMS_TOTAL], |mut acc, (i, b)| {

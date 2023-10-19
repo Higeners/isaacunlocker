@@ -3,6 +3,9 @@ use crate::savedata::{
 	ACHIEVEMENTS_TOTAL,
 	ITEMS_TOTAL
 };
+use find_all::FindAll;
+use std::rc::Rc;
+
 use crate::*;
 use slint::*;
 
