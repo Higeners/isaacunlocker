@@ -1,16 +1,5 @@
 <div align=center>
 	<img src=images/readme_icon.png width=40%>
-	<style>
-		@font-face {
-			font-family: 'Upheaval TT (BRK)';
-			src: url('src/upheavtt.ttf'); 
-		}
-		h1{
-			font-family: "Upheaval TT (BRK)";
-			letter-spacing: 2px;
-			text-shadow: 0px 1px 8px #FF0000;
-		}
-	</style>
 	<h1> Isaac Achievement Unlocker </h1>
 </div>
 
