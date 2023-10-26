@@ -1,6 +1,9 @@
 use std::env;
 fn main() {
-	slint_build::compile("src/app.slint").unwrap();
+	let config =
+    	slint_build::CompilerConfiguration::new()
+    	.with_style("cupertino-dark".into());
+	slint_build::compile_with_config("src/app.slint", config).unwrap();
     if env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
         use std::{
             fs::{copy, write},

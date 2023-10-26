@@ -72,9 +72,10 @@ export global UnlockAchievements {
 	callback unlock();
 }
 
-export component Icon inherits Image {
+component Icon inherits Image {
 	width: 60px;
 	height: 60px;
+	image-rendering: pixelated;
 	in-out property <bool> has-unlocked: Search.achievements[id].unlocked;
 	in property <bool> achievement;
 	in property <int> id;
@@ -123,14 +124,44 @@ export component Icon inherits Image {
 			
 			}
 		]
+	
 	}
 } 
+
+component IconDisplay inherits VerticalLayout {
+	in property <length> size;
+	in property <Achievement> achievement;
+	in property <IsaacIcon> icon;
+	in property <bool> is-achievement;
+	in property <length> font-size;
+	Icon {
+		width: size;
+		height: size;
+		achievement: is-achievement;
+		id: achievement.id;
+		source: icon.image;
+		has-unlocked: achievement.unlocked;
+	}
+	Text {
+		font-size: font-size;
+		text: achievement.id + 1;
+		horizontal-alignment: center;
+	}
+	Text {
+		font-size: font-size;
+		text: icon.name;
+		wrap: word-wrap;
+		horizontal-alignment: center;
+
+	}
+}
+
 component InputField {
 	in property <length> font-size;
 	in property <length> border-width;
 	in property <string> input-title;
 	in property <color> background-color;
-	in property <color> font-color;
+	in property <color> font-color: white;
 	in property <string> font-family;
 	in-out property <string> text;
 	callback edited;
@@ -146,6 +177,7 @@ component InputField {
 			font-size: root.font-size;
 			text: input-title;
 			font-family: root.font-family;
+			color: white;
 		}
 		textin:= TextInput {
 			wrap: no-wrap;
@@ -169,7 +201,10 @@ component InputField {
 		height: textin.height + 12px;
 		border-radius: 4px;
 		border-width: root.border-width;
-		border-color: gray.darker(10%);
+		border-color: textin.has-focus ? #0095ff : gray.darker(10%);
+		animate border-color {
+			 easing: ease-in; duration: 100ms;
+		}
 	}
 	
 }
@@ -178,7 +213,10 @@ export component App inherits Window {
 	min-width: 420px;
 	preferred-width: 1000px;
 	preferred-height: 800px;
-	background: @linear-gradient(0deg, #191a1c, #202528);
+	background: tabs.current-index == 0 ? @linear-gradient(0deg, #111c23, #172731): @linear-gradient(0deg, #15141c, #211f2c);
+	animate background {
+		 duration: 300ms; easing: ease-out;
+	}
 	default-font-family: "Upheaval TT (BRK)";
 	default-font-size: 16px;
 	default-font-weight: 500;
@@ -187,6 +225,17 @@ export component App inherits Window {
 	property <int> list-width: tiles-num.value;
 	property <int> item-list-height: Math.ceil(Search.items-indexes.length / list-width);
 	property <int> list-height: Math.ceil(Search.indexes.length / list-width);
+	tiles-num:= SpinBox { 
+		property <physical-length> space: 20px;
+		z: 1000;
+		width: 60px;
+		height: 40px;
+		x: root.width - self.width - space;
+		y: root.height - self.height - space;
+		minimum: 4;
+		maximum: 32;
+		value: 10;
+	}
 	Rectangle {
 		background: transparent;
 		width: input-tab.width;
@@ -194,7 +243,7 @@ export component App inherits Window {
 		x: input-tab.x;
 		y: input-tab.y;
 		border-width: 4px;
-		border-radius: 16px;
+		border-radius: 2px;
 		border-color: #454242;
 	}
 	VerticalLayout {
@@ -202,34 +251,16 @@ export component App inherits Window {
 			padding-left: 6px;
 			padding-top: 8px;
 			spacing: -4px;
-			HorizontalLayout {
-				alignment: space-between;
-				search:= InputField {
-					input-title: "Search:";
-					font-size: 40px;
-					border-width: 2px;
-					background-color: gray.darker(40%);
-					font-color: white;
-					edited => {
-						range-from.clear();
-						range-to.clear();
-						Search.search-change(self.text);
-					}
-				}
-				HorizontalBox {
-					alignment: start;
-					Text {
-						font-size: 40px;
-						text: "Number of tiles: ";
-					}
-					tiles-num:= SpinBox { 
-						
-						width: 100px;
-						height: 40px;
-						minimum: 4;
-						maximum: 32;
-						value: 10;
-					}
+			search:= InputField {
+				input-title: "Search:";
+				font-size: 40px;
+				border-width: 2px;
+				background-color: gray.darker(40%);
+				font-color: white;
+				edited => {
+					range-from.clear();
+					range-to.clear();
+					Search.search-change(self.text);
 				}
 			}
 			HorizontalBox {
@@ -238,6 +269,9 @@ export component App inherits Window {
 				alignment: start;
 				range-from:= InputField {
 					input-title: tabs.current-index == 0 ? "Range of achievements:" : "Range of items:";
+					animate width {
+						 duration: 100ms; easing: ease-in;
+					}
 					font-size: 40px;
 					font-color: white;
 					border-width: 2px;
@@ -287,11 +321,13 @@ export component App inherits Window {
 					}
 				}
 			}
+
 			
 		}
 	tabs:= TabWidget {
 		property <length> size: (root.width - 2 * 4px - (list-width - 1) * 16px - 16px) / list-width;
-
+		property <length> font-size: root.width * 15% * 1/list-width;
+		
 		Tab {
 			title: "Achievements";
 			
@@ -303,23 +339,12 @@ export component App inherits Window {
 					
 					for t in list_actual_width : VerticalLayout {
 						property <int> index: Search.indexes[t + i * list-width];
-						Icon {
-							width: size;
-							height: size;
-							achievement: true;
-							source: Search.icons[index].image;
-							has-unlocked: Search.achievements[index].unlocked;
-							id: Search.achievements[index].id;
-						}
-						Text {
-							text: Search.achievements[index].id + 1;
-							horizontal-alignment: center;
-						}
-						Text {
-							text: Search.icons[index].name;
-							wrap: word-wrap;
-							horizontal-alignment: center;
-							font-size: root.width * 1%;
+						IconDisplay {
+							icon: Search.icons[index];
+							achievement: Search.achievements[index];
+							is-achievement: true;
+							size: size;
+							font-size: font-size;
 						}
 					}
 				}
@@ -337,21 +362,12 @@ export component App inherits Window {
 					property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
 					for t in list_actual_width : VerticalLayout {
 						property <int> index: Search.items-indexes[t + i * list-width];
-						Icon {
-							width: size;
-							height: size;
-							achievement: false;
-							source: Search.items-icons[index].image;
-							has-unlocked: Search.items[index].unlocked;
-							id: Search.items[index].id;
-						}
-						Text {
-							text: Search.items[index].id + 1;
-						}Text {
-							text: Search.items-icons[index].name;
-							wrap: word-wrap;
-							font-size: root.width * 1%;
-
+						IconDisplay {
+							icon: Search.items-icons[index];
+							achievement: Search.items[index];
+							is-achievement: true;
+							size: size;
+							font-size: font-size;
 						}
 					}
 				}
