@@ -8,19 +8,26 @@ use std::{
 
 use winreg::{RegKey, enums::HKEY_LOCAL_MACHINE};
 lazy_static::lazy_static! {
-	pub static ref ISAAC_FOLDER: String = {
+	pub static ref ISAAC_FOLDER: Result<String, String> = {
 		let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-		let steam = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam").expect("Steam is not installed");
-		let path: String = steam.get_value("InstallPath").expect("Failed to find Steam folder");
+		let steam = hklm.open_subkey(r"SOFTWARE\WOW6432Node\Valve\Steam").map_err(
+			|_| -> String{
+				"Failed to find steam".to_string()
+			}
+		)?;
+		let path: String = steam.get_value("InstallPath")
+			.map_err(|x| {
+				x.to_string()
+			})?;
 		for p in fs::read_dir(path + r"\userdata").unwrap() {
 			for ps in fs::read_dir(p.unwrap().path()).unwrap() {
 				if ps.as_ref().unwrap().file_name() == "250900"{
-					return ps.unwrap().path().to_str().unwrap().to_string() + r"\remote";
+					return Ok(ps.unwrap().path().to_str().unwrap().to_string() + r"\remote");
 				}
 	
 			}
 		};
-		String::new()
+		Err("Failed to find isaac folder".to_string())
 	};
 }
 
@@ -98,7 +105,7 @@ impl TotalData {
 
 impl SaveData {
 	pub fn load_save(savefile: u32, ) -> Option<Self> {
-		let path = ISAAC_FOLDER.to_string() + format!("\\rep_persistentgamedata{savefile}.dat").as_str();
+		let path = ISAAC_FOLDER.as_ref().unwrap().to_string() + format!("\\rep_persistentgamedata{savefile}.dat").as_str();
 		let file = File::open(path).ok()?;
 		let mut buf = [0; 637];
 		file.seek_read(&mut buf, ACHIEVEMENT_OFFSET).ok()?;
@@ -130,7 +137,7 @@ impl SaveData {
 	}
 
 	pub fn unlock_achievements(&self, ach: [bool; 637]) {
-		let path = ISAAC_FOLDER.to_string() + format!("\\rep_persistentgamedata{}.dat", self.saveid).as_str();
+		let path = ISAAC_FOLDER.as_ref().unwrap().to_string() + format!("\\rep_persistentgamedata{}.dat", self.saveid).as_str();
 		let file = OpenOptions::new()
 			.read(true)
 			.write(true)

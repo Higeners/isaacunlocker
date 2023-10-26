@@ -1,20 +1,24 @@
 [package]
 name = "isaacunlocker"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-slint-build = "1.1.1"
+slint-build = "1.2.2"
 
 [dependencies]
 find_all = "2.0.0"
 image = "0.24.7"
 include_dir = "0.7.3"
 lazy_static = "1.4.0"
-slint = "1.1.1"
+slint = "1.2.2"
 winreg = "0.50.0"
+
+[dependencies.winapi]
+version = "0.3.9"
+features = ["winuser"]
 
 [profile.release]
 strip = true
