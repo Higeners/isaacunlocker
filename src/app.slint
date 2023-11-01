@@ -24,6 +24,12 @@ export global Search {
 	in-out property <[int]> items_indexes: [
 		0,1,2,3,4,5
 	];
+
+	in-out property <[int]> search_items_mask;
+	in-out property <[int]> search_achievement_mask;
+	in-out property <[int]> type_items_mask;
+	in-out property <[int]> type_achievement_mask;
+
 	in property <[IsaacIcon]> icons: [
 		{image: @image-url("../images/achievements/1.png"), name: "Lorem ipsum dolor sit amet consectetur adipisicing elit."},
 		{image: @image-url("../images/achievements/1.png")},
@@ -57,19 +63,22 @@ export global Search {
 	];
 	in-out property <[Achievement]> achievements: [
 		{unlocked: true, id: 0},
-		{unlocked: true, id: 0},
-		{unlocked: true, id: 0},
+		{unlocked: true, id: 1},
+		{unlocked: true, id: 2},
 	];
 	in-out property <[Achievement]> items: [
 		{unlocked: true, id: 0}
 	];
 	in-out property <int> Savefile: 1;
+	in-out property <string> type: "All";
 	callback range_change(int, int);
 	callback search_change(string);
 	callback select_save(int);
+	callback type_select(string);
 }
 export global UnlockAchievements {
 	callback unlock();
+	callback unlock_all();
 }
 
 component Icon inherits Image {
@@ -93,8 +102,8 @@ component Icon inherits Image {
 		}
 		border-width: 0px;
 		border-radius: 2px;
-		border-color: #b44160;
-
+		border-color: transparent;
+		
 		animate border-width {duration: 100ms ; easing: ease-in-out; }
 		animate border-color {
 			duration: 200ms ; easing: ease-in-out;
@@ -124,7 +133,6 @@ component Icon inherits Image {
 			
 			}
 		]
-	
 	}
 } 
 
@@ -218,7 +226,7 @@ export component App inherits Window {
 		 duration: 300ms; easing: ease-out;
 	}
 	default-font-family: "Upheaval TT (BRK)";
-	default-font-size: 16px;
+	default-font-size: 20px;
 	default-font-weight: 500;
 	
 	icon: @image-url("../images/icon.png");
@@ -235,6 +243,24 @@ export component App inherits Window {
 		minimum: 4;
 		maximum: 32;
 		value: 10;
+	}
+	Rectangle {
+		x: tx.x - self.border-width / 2 - 4px;
+		y: tx.y - self.border-width / 2 - 2px;
+		border-width: 4px;
+		border-radius: 4px;
+		width: tx.width + self.border-width + 8px;
+		height: tx.height + self.border-width + 4px;
+		border-color: white.darker(40%);
+		background: gray.darker(40%);
+		z: 5;
+	}
+	tx:= Text {
+		z: 10;
+		text: tabs.current-index == 0 ? "\{Search.indexes.length}/\{Search.achievements.length}" : "\{Search.items-indexes.length}/\{Search.items.length}";
+		x: 10px;
+		font-size: 20px;
+		y: root.height - self.font-size - 12px;
 	}
 	Rectangle {
 		background: transparent;
@@ -278,7 +304,7 @@ export component App inherits Window {
 					background-color: gray.darker(40%);
 					edited => {
 						search.clear();
-						Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 637);
+						Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 900);
 					}
 				}
 				range-to:= InputField {
@@ -290,26 +316,49 @@ export component App inherits Window {
 					font-color: white;
 					edited => {
 						search.clear();
-						Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 637);
+						Search.range-change(range-from.text.to-float(), range-to.text.is-float() ? range-to.text.to-float(): 900);
 					}
 				}
 			}
 			saves:= HorizontalBox {
-				alignment: start;
-				Text {
-					font-size: 40px;
-					text: "Savefile: ";
-				}
-				ComboBox { 
-					padding-left: 10px;
-					width: 60px;
-					model: Search.saves;
-					current-value: Search.Savefile;
-					selected(ind) => {
-						Search.Savefile = ind.to-float();
-						Search.select-save(ind.to-float());
+				alignment: space-between;
+				HorizontalBox {
+					alignment: start;
+					padding: 0;
+					Text {
+						font-size: 40px;
+						text: "Savefile: ";
 					}
-				}	
+					ComboBox { 
+						padding-left: 10px;
+						width: 60px;
+						model: Search.saves;
+						current-value: Search.Savefile;
+						selected(ind) => {
+							Search.Savefile = ind.to-float();
+							Search.select-save(ind.to-float());
+						}
+					}	
+				}
+				HorizontalBox {
+					alignment: start;
+					padding: 0;
+					Text {
+						text: "Unlock filter:";
+						font-size: 40px;
+					}
+					type:= ComboBox {
+						model: [
+							"All",
+							"Locked",
+							"Unlocked"
+						];
+						selected(type) => {
+							Search.type = type;
+							Search.type-select(type);
+						}
+					}
+				}
 			}
 			HorizontalBox {
 				alignment: center;
@@ -318,6 +367,13 @@ export component App inherits Window {
 					width: 250px;
 					clicked => {
 						UnlockAchievements.unlock();
+					}
+				}
+				Button {
+					text: "Unlock All";
+					width: 350px;
+					clicked => {
+						UnlockAchievements.unlock-all();
 					}
 				}
 			}
@@ -330,49 +386,41 @@ export component App inherits Window {
 		
 		Tab {
 			title: "Achievements";
-			
 			ListView  {
 				for i in list-height : HorizontalLayout{
 					padding: 4px;
 					spacing: 16px;
 					property <int> list_actual_width: Math.min(Search.indexes.length - i * list-width, list-width);
-					
-					for t in list_actual_width : VerticalLayout {
+					for t in list_actual_width : IconDisplay {
 						property <int> index: Search.indexes[t + i * list-width];
-						IconDisplay {
-							icon: Search.icons[index];
-							achievement: Search.achievements[index];
-							is-achievement: true;
-							size: size;
-							font-size: font-size;
-						}
+						icon: Search.icons[index];
+						achievement: Search.achievements[index];
+						is-achievement: true;
+						size: size;
+						font-size: font-size;
 					}
 				}
 			}
 		}
 		Tab {
-		title: "Items";
-		
+			title: "Items";
 			ListView {
-				property <int> list-height: Math.ceil(Search.items-icons.length / list-width);
-
+				property <int> list-height: Math.ceil(Search.items-indexes.length / list-width);
 				for i in list-height : HorizontalLayout{
 					padding: 4px;
 					spacing: 16px;
 					property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
-					for t in list_actual_width : VerticalLayout {
+					for t in list_actual_width : IconDisplay {
 						property <int> index: Search.items-indexes[t + i * list-width];
-						IconDisplay {
-							icon: Search.items-icons[index];
-							achievement: Search.items[index];
-							is-achievement: true;
-							size: size;
-							font-size: font-size;
+						icon: Search.items-icons[index];
+						achievement: Search.items[index];
+						is-achievement: false;
+						size: size;
+						font-size: font-size;
 						}
 					}
 				}
 			}
 		}
-	}	
-}
+	}
 }
