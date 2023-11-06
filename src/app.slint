@@ -3,6 +3,7 @@ import "./upheavtt.ttf";
 struct IsaacIcon {
 	image: image,
 	name: string,
+	description: string,
 }
 struct Achievement {
 	unlocked: bool,
@@ -94,6 +95,7 @@ component Icon inherits Image {
 			clicked() => {
 				parent.pressed();
 			}
+			mouse-cursor: grab;
 		}
 		pressed => {
 			if (root.achievement){
@@ -136,31 +138,44 @@ component Icon inherits Image {
 	}
 } 
 
-component IconDisplay inherits VerticalLayout {
+component IconDisplay inherits Rectangle {
 	in property <length> size;
 	in property <Achievement> achievement;
 	in property <IsaacIcon> icon;
 	in property <bool> is-achievement;
 	in property <length> font-size;
-	Icon {
-		width: size;
-		height: size;
-		achievement: is-achievement;
-		id: achievement.id;
-		source: icon.image;
-		has-unlocked: achievement.unlocked;
+	VerticalLayout {
+		Icon {
+			width: size;
+			height: size;
+			achievement: is-achievement;
+			id: achievement.id;
+			source: icon.image;
+			has-unlocked: achievement.unlocked;
+		}
+		Text {
+			font-size: font-size;
+			text: achievement.id + 1;
+			horizontal-alignment: center;
+		}
+		Text {
+			font-size: font-size;
+			text: (is-achievement && ta.has-hover) ? icon.description : icon.name;
+			color: (is-achievement && ta.has-hover) ? black : white;
+			wrap: word-wrap;
+			horizontal-alignment: center;
+			z: 10;
+			ta:= TouchArea {
+			}
+		}
 	}
-	Text {
-		font-size: font-size;
-		text: achievement.id + 1;
-		horizontal-alignment: center;
-	}
-	Text {
-		font-size: font-size;
-		text: icon.name;
-		wrap: word-wrap;
-		horizontal-alignment: center;
-
+	Rectangle {
+		drop-shadow-blur: 8px;
+		drop-shadow-color: (is-achievement && ta.has-hover) ? red.transparentize(60%): transparent;
+		animate drop-shadow-color {
+			 duration: 100ms;
+		}
+		z: -10;
 	}
 }
 
@@ -198,23 +213,21 @@ component InputField {
 				root.edited()
 			}
 		}
-		
 	}
 	Rectangle {
 		z: -10;
-		x: textin.x - 5px;
+		x: textin.x - 5px - self.border-width / 2;
 		background: background-color;
 		clip : true;
-		width: textin.width + 10px;
-		height: textin.height + 12px;
+		border-width: textin.has-focus ? 2px : root.border-width;
+		width: textin.width + 10px + self.border-width / 2;
+		height: textin.height + 12px + self.border-width / 2;
 		border-radius: 4px;
-		border-width: root.border-width;
 		border-color: textin.has-focus ? #0095ff : gray.darker(10%);
-		animate border-color {
-			 easing: ease-in; duration: 100ms;
+		animate border-color, border-width {
+			 easing: ease-out; duration: 250ms;
 		}
 	}
-	
 }
 export component App inherits Window {
 	title: "Isaac Achievement Unlocker";
@@ -234,11 +247,11 @@ export component App inherits Window {
 	property <int> item-list-height: Math.ceil(Search.items-indexes.length / list-width);
 	property <int> list-height: Math.ceil(Search.indexes.length / list-width);
 	tiles-num:= SpinBox { 
-		property <physical-length> space: 20px;
+		property <physical-length> space: 4px;
 		z: 1000;
 		width: 60px;
 		height: 40px;
-		x: root.width - self.width - space;
+		x: root.width - self.width - space - 10px;
 		y: root.height - self.height - space;
 		minimum: 4;
 		maximum: 32;
@@ -246,21 +259,23 @@ export component App inherits Window {
 	}
 	Rectangle {
 		x: tx.x - self.border-width / 2 - 4px;
-		y: tx.y - self.border-width / 2 - 2px;
-		border-width: 4px;
-		border-radius: 4px;
+		y: tx.y - self.border-width / 2 - 1px;
+		border-width: 1px;
+		border-radius: 2px;
 		width: tx.width + self.border-width + 8px;
 		height: tx.height + self.border-width + 4px;
-		border-color: white.darker(40%);
+		border-color: gray.darker(20%);
 		background: gray.darker(40%);
 		z: 5;
 	}
 	tx:= Text {
 		z: 10;
-		text: tabs.current-index == 0 ? "\{Search.indexes.length}/\{Search.achievements.length}" : "\{Search.items-indexes.length}/\{Search.items.length}";
-		x: 10px;
-		font-size: 20px;
-		y: root.height - self.font-size - 12px;
+		text: tabs.current-index == 0 ? 
+		"\{Search.indexes.length}/\{Search.achievements.length}" :
+		"\{Search.items-indexes.length}/\{Search.items.length}";
+		x: 8px;
+		font-size:24px;
+		y: root.height - self.font-size - 4px;
 	}
 	Rectangle {
 		background: transparent;
@@ -269,7 +284,6 @@ export component App inherits Window {
 		x: input-tab.x;
 		y: input-tab.y;
 		border-width: 4px;
-		border-radius: 2px;
 		border-color: #454242;
 	}
 	VerticalLayout {
@@ -280,7 +294,7 @@ export component App inherits Window {
 			search:= InputField {
 				input-title: "Search:";
 				font-size: 40px;
-				border-width: 2px;
+				border-width: 1px;
 				background-color: gray.darker(40%);
 				font-color: white;
 				edited => {
@@ -300,7 +314,7 @@ export component App inherits Window {
 					}
 					font-size: 40px;
 					font-color: white;
-					border-width: 2px;
+					border-width: 1px;
 					background-color: gray.darker(40%);
 					edited => {
 						search.clear();
@@ -311,7 +325,7 @@ export component App inherits Window {
 					input-title: "-";
 					font-size: 40px;
 					
-					border-width: 2px;
+					border-width: 1px;
 					background-color: gray.darker(40%);
 					font-color: white;
 					edited => {
@@ -380,43 +394,43 @@ export component App inherits Window {
 
 			
 		}
-	tabs:= TabWidget {
-		property <length> size: (root.width - 2 * 4px - (list-width - 1) * 16px - 16px) / list-width;
-		property <length> font-size: root.width * 15% * 1/list-width;
-		
-		Tab {
-			title: "Achievements";
-			ListView  {
-				for i in list-height : HorizontalLayout{
-					padding: 4px;
-					spacing: 16px;
-					property <int> list_actual_width: Math.min(Search.indexes.length - i * list-width, list-width);
-					for t in list_actual_width : IconDisplay {
-						property <int> index: Search.indexes[t + i * list-width];
-						icon: Search.icons[index];
-						achievement: Search.achievements[index];
-						is-achievement: true;
-						size: size;
-						font-size: font-size;
+		tabs:= TabWidget {
+			property <length> size: (root.width - 2 * 4px - (list-width - 1) * 16px - 16px) / list-width;
+			property <length> font-size: root.width * 15% * 1/list-width;
+			Tab {
+				title: "Achievements";
+				ListView  {
+					for i in list-height : HorizontalLayout{
+						alignment: start;
+						padding: 4px;
+						spacing: 16px;
+						property <int> list_actual_width: Math.min(Search.indexes.length - i * list-width, list-width);
+						for t in list_actual_width : IconDisplay {
+							property <int> index: Search.indexes[t + i * list-width];
+							icon: Search.icons[index];
+							achievement: Search.achievements[index];
+							is-achievement: true;
+							size: size;
+							font-size: font-size;
+						}
 					}
 				}
 			}
-		}
-		Tab {
-			title: "Items";
-			ListView {
-				property <int> list-height: Math.ceil(Search.items-indexes.length / list-width);
-				for i in list-height : HorizontalLayout{
-					padding: 4px;
-					spacing: 16px;
-					property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
-					for t in list_actual_width : IconDisplay {
-						property <int> index: Search.items-indexes[t + i * list-width];
-						icon: Search.items-icons[index];
-						achievement: Search.items[index];
-						is-achievement: false;
-						size: size;
-						font-size: font-size;
+			Tab {
+				title: "Items";
+				ListView {
+					property <int> list-height: Math.ceil(Search.items-indexes.length / list-width);
+					for i in list-height : HorizontalLayout{
+						padding: 4px;
+						spacing: 16px;
+						property <int> list_actual_width: Math.min(Search.items-indexes.length - i * list-width, list-width);
+						for t in list_actual_width : IconDisplay {
+							property <int> index: Search.items-indexes[t + i * list-width];
+							icon: Search.items-icons[index];
+							achievement: Search.items[index];
+							is-achievement: false;
+							size: size;
+							font-size: font-size;
 						}
 					}
 				}

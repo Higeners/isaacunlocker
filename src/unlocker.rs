@@ -10,11 +10,12 @@ use crate::*;
 use slint::*;
 
 const ACHIEVEMENTS_NAMES: &str = include_str!("Achievements.txt");
+const DESCRIPTIONS: &str = include_str!("Descriptions.txt");
 const ITEMS_NAMES: &str = include_str!("Items.txt");
 use include_dir::*;
 
 const IMAGES: Dir = include_dir!("./images");
-fn imbed_achivement_images() -> Vec<(slint::Image, String)>{
+fn imbed_achivement_images() -> Vec<(slint::Image, String, String)>{
 	use slint::*;
 	let mut files: Vec<&File> = IMAGES.get_dir("achievements").unwrap().files().collect();
 	files.sort_by(|a, b| {
@@ -28,12 +29,12 @@ fn imbed_achivement_images() -> Vec<(slint::Image, String)>{
 		.strip_suffix(".png")
 		.unwrap().parse::<i16>().unwrap())
 	});
-	let mut images: Vec<(slint::Image, String)> = vec![];
-	for (file, name) in files.iter().zip(ACHIEVEMENTS_NAMES.lines()) {
+	let mut images: Vec<(slint::Image, String, String)> = vec![];
+	for ((file, name), descr ) in files.iter().zip(ACHIEVEMENTS_NAMES.lines()).zip(DESCRIPTIONS.lines()) {
 		let image = image::load_from_memory(file.contents()).unwrap().into_rgba8();
 		let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(image.as_raw(), image.width(), image.height());
 		let i = Image::from_rgba8(buffer);
-		images.push((i, name.to_string()));
+		images.push((i, name.to_string(), descr.to_string()));
 	}
 	images
 }
@@ -77,8 +78,8 @@ impl Unlocker {
 		let icons = {
 			let images = imbed_achivement_images();
 			let mut arr = vec![];
-			for (im, s) in images.iter(){
-				arr.push(IsaacIcon {image: im.clone(), name: s.into()});
+			for (im, s, desc) in images.iter(){
+				arr.push(IsaacIcon {image: im.clone(), name: s.into(), description: desc.into()});
 			}
 			arr
 		};
@@ -86,7 +87,7 @@ impl Unlocker {
 		let item_icons = {
 			let images = imbed_items_images();
 			images.iter().fold( Vec::<IsaacIcon>::new(), |mut acc, (im, s)| {
-				acc.push(IsaacIcon {image: im.clone(), name: s.into()} );
+				acc.push(IsaacIcon {image: im.clone(), name: s.into(), description: "".into()} );
 				acc
 			})
 		};
@@ -100,7 +101,7 @@ impl Unlocker {
 				}
 			}
 			let v = std::rc::Rc::new(VecModel::from(v));
-			self.app.global::<Search>().set_saves(v.clone().into());
+			self.app.global::<Search>().set_saves(v.into());
 		}
 		let savefile = self.app.global::<Search>().get_Savefile() as usize;
 
@@ -125,9 +126,9 @@ impl Unlocker {
 		let achievements = std::rc::Rc::new(VecModel::from(achievements));
 		let items = std::rc::Rc::new(VecModel::from(items));
 
-		self.app.global::<Search>().set_items_icons(item_icons.clone().into());
+		self.app.global::<Search>().set_items_icons(item_icons.into());
 		self.app.global::<Search>().set_items(items.clone().into());
-		self.app.global::<Search>().set_icons(icons.clone().into());
+		self.app.global::<Search>().set_icons(icons.into());
 		self.app.global::<Search>().set_achievements(achievements.clone().into());
 	
 		self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
@@ -251,8 +252,8 @@ impl Unlocker {
 			let app = weak_app.upgrade().unwrap();
 			let saves = weak_saves.upgrade().unwrap();
 			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].unwrap()
-				.unlock_achievements(achievements.iter().enumerate().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, (i,x)| {
-					acc[i] = x.unlocked;
+				.unlock_achievements(achievements.iter().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, x| {
+					acc[x.id as usize] = x.unlocked;
 					acc
 				}));
 		});
@@ -271,8 +272,8 @@ impl Unlocker {
 			let app = weak_app.upgrade().unwrap();
 			let saves = weak_saves.upgrade().unwrap();
 			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].unwrap()
-				.unlock_achievements(achievements.iter().enumerate().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, (i,x)| {
-					acc[i] = x.unlocked;
+				.unlock_achievements(achievements.iter().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, x| {
+					acc[x.id as usize] = x.unlocked;
 					acc
 				}));
 		});

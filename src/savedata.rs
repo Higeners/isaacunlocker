@@ -43,8 +43,8 @@ pub struct SaveData {
 	pub items: [bool; ITEMS_TOTAL],
 	saveid: u32,
 }
-#[derive(Clone, Copy)]
 
+#[derive(Clone, Copy)]
 pub struct TotalData {
 	pub saves: [Option<SaveData>; 3],
 }
