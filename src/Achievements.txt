@@ -25,7 +25,7 @@ Little Steven
 Little C.H.A.D.
 A Gamekid
 A Halo
-Mr
+Mr. Mega
 The D6
 The Scissors
 The Parasite
@@ -99,9 +99,9 @@ Credit Card
 Rules Card
 Card Against Humanity
 Swallowed Penny
-Robo-Baby 2
+Robo-Baby 2.0
 Death's Touch
-Technology 
+Technology .5
 Missing No.
 Isaac's Tears
 Guillotine
@@ -148,10 +148,10 @@ Blood Bag
 The D4
 Missing Poster
 Rubber Cement
-Store Upgrade lv
-Store Upgrade lv
-Store Upgrade lv
-Store Upgrade lv
+Store Upgrade lv.1
+Store Upgrade lv.2
+Store Upgrade lv.3
+Store Upgrade lv.4
 Angels
 Godhead
 Darkness Falls
@@ -188,7 +188,7 @@ Empty Vessel
 Eden's Blessing
 Sworn Protector
 Incubus
-Keeper now holds..
+Keeper now holds... A Penny!
 Lil' Chest
 Censer
 Evil Eye
@@ -325,7 +325,7 @@ Sin collector
 Dedication
 ZIP!
 It's the Key
-Mr
+Mr. Resetter!
 Living on the edge
 U Broke It!
 Laz Bleeds More!
@@ -368,7 +368,7 @@ Jumper Cables
 Leprosy
 Technology Zero
 Filigree Feather
-Mr
+Mr. ME!
 7 Seals
 Angelic Prism
 Pop!

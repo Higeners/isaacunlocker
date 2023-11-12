@@ -16,7 +16,7 @@ Defeat Lokii
 Beat Basement 40 times
 Beat Chapter 2 30 times
 Beat Chapter 3 20 times
-Make a Super Bandage Girl by picking up 4 copies of Ball of Bandages in one run; see Unlocking Super Meat Boy & Super Bandage Girl
+Make a Super Bandage Girl by picking up 4 copies of Ball of Bandages in one run
 Defeat Isaac as Magdalene
 Defeat Isaac as Cain
 Defeat all 7 Deadly Sins
@@ -79,7 +79,7 @@ Defeat Satan 5 times
 Make 3 Deals with the Devil in one run
 Have 4 or more Soul Hearts at one time
 Complete Chapter 4
- It's complicated Die in a Sacrifice Room while holding Missing Poster
+Die in a Sacrifice Room while holding Missing Poster
 Complete Chapter 6 without taking damage
 Collect every non-DLC item, and unlock every secret and ending.
 Destroy 100 rocks
@@ -141,7 +141,7 @@ Defeat Mom's Heart 6 times
 Defeat Mom's Heart 7 times
 Take 20 items from Devil Rooms
 Defeat Krampus
-Make a Super Meat Boy by picking up 4 copies of Cube of Meat in one run; see Unlocking Super Meat Boy & Super Bandage Girl
+Make a Super Meat Boy by picking up 4 copies of Cube of Meat in one run
 Destroy 100 Poops
 Pick up any 2 of the following items in a single run: Roid Rage, The Virus, Growth Hormones, Experimental Treatment, and Speed Ball ( Any 2 items that have the 'syringe' item tag)
 Use the Blood Donation Machine 30 times
@@ -153,8 +153,8 @@ Donate 100 Coins to the Donation Machine
 Donate 200 Coins to the Donation Machine
 Donate 600 Coins to the Donation Machine
 Complete Chapter 6
-Earn all 5 / 9 (except Ultra Greed) / 10 / 12 Completion Marks on Hard mode as The Lost
- Defeat Mom's Heart 11 times and unlock Eve Defeat Mom's Heart 11 times and defeat ??? as Eve
+Earn all Completion Marks on Hard mode as The Lost
+Defeat Mom's Heart 11 times and defeat ??? as Eve
 Have 7 or more Red Heart Containers at one time
 Defeat Mom's Heart 3 times
 Defeat Mom's Heart 11 times and unlock Lazarus
@@ -169,8 +169,8 @@ Defeat Mom's Heart on Hard mode as Magdalene
 Defeat Mom's Heart on Hard mode as Eve
 Defeat Mom's Heart on Hard mode as Judas
 Defeat Mom's Heart on Hard mode as Cain
- Defeat Mom's Heart on Hard mode as Azazel Defeat Mom's Heart on Hard mode as Lazarus
- Defeat Mom's Heart on Hard mode as Lazarus Defeat Mom's Heart on Hard mode as Azazel
+Defeat Mom's Heart on Hard mode as Lazarus
+Defeat Mom's Heart on Hard mode as Azazel
 Defeat Mom's Heart on Hard mode as ???
 Defeat Mom's Heart on Hard mode as The Lost
 Defeat Mom's Heart on Hard mode as Eden
@@ -229,8 +229,8 @@ Complete Have a Heart (challenge #25)
 Complete I RULE! (challenge #26)
 Complete BRAINS! (challenge #27)
 Complete PRIDE DAY! (challenge #28)
- Complete The Guardian (challenge #30) Complete Onan's Streak (challenge #29)
- Complete Onan's Streak (challenge #29) Complete The Guardian (challenge #30)
+Complete Onan's Streak (challenge #29)
+Complete The Guardian (challenge #30)
 Defeat Mom's Heart 10 times
 Unlock all secrets and endings, and collect every item in the game
 Defeat Isaac as Keeper
@@ -267,17 +267,17 @@ Defeat Mom
 Destroy 10 Tinted Rocks and defeat Mom's Heart 11 times
 Defeat Isaac as Cain and destroy 10 Tinted Rocks
 Defeat Mom
- Defeat ??? or The Lamb, defeat Satan as Isaac, and unlock The Negative Defeat ??? or The Lamb, and defeat Satan as Isaac Defeat Mega Satan and unlock The Negative
+Defeat Mega Satan and unlock The Negative
 Defeat Isaac 5 times
 Defeat Mom
- Defeat Mom Unlock Judas and It Lives.
+Unlock Judas and It Lives.
 Defeat Mom
 Donate 999 Coins to the Greed Donation Machine
 Defeat Mega Satan as every character ( except Tainted characters)
- Defeat ??? or The Lamb Defeat Mega Satan and unlock The Negative
+Defeat Mega Satan and unlock The Negative
 Defeat Mom
 Defeat Mom's Heart 11 times
- Defeat ??? or The Lamb. Possession of The Polaroid / The Negative is required, barring getting to Dark Room through a Sacrifice Room. Defeat Mega Satan and unlock The Negative
+Defeat Mega Satan and unlock The Negative
 Defeat Isaac 5 times
 Defeat Delirium as Isaac
 Defeat Delirium as Magdalene
@@ -320,9 +320,9 @@ Earn all Hard mode Completion Marks as Apollyon
 Defeat Hush
 Complete a Victory Lap, defeating The Lamb
 Get a 3-win streak
-Get a 5-win streak ( 3-win streak), using a different character each time (Mega Satan victories do not count if the Void portal doesn't spawn)
-Collect every entry in the Bestiary (bugged v190 - Mobs that don't exist in the bestiary are being counted. This allows Sin Collector to be unlocked without a complete bestiary)
-Participate in 31 Daily Challenges (they don't have to be consecutive; it will still count if Isaac dies in the first room)
+Get a 3-win streak, using a different character each time
+Collect every entry in the Bestiary
+Participate in 31 Daily Challenges
 Defeat The Lamb in under 20 minutes
 Defeat The Lamb without taking Hearts, Coins, or Bombs through the entire run
 Reset 7 times in a row
@@ -383,12 +383,12 @@ Acquire Rubber Cement 5 times
 Take 50 Deals with the Devil
 Have Isaac die to his own explosion from Ipecac, Bob's Rotten Head, or a Horf! pill
 Sleep in 10 beds
-Use 5 Gulp! pills in one run (Placebo uses count)
+Use 5 Gulp! pills in one run
 Spawn three charmed enemies in the same room
 Have 20 Blue Flies at the same time
 Use I - The Magician or Telepathy for Dummies while already having homing tears
-It's complicated
-It's complicated
+Unlock The Forgotten
+Unlock The Forgotten
 Defeat Mom's Heart or It Lives! on Hard mode as The Forgotten
 Defeat Isaac as The Forgotten
 Defeat Satan as The Forgotten
@@ -471,23 +471,23 @@ Defeat Mother as Bethany
 Defeat The Beast as Bethany
 Defeat Mother as Jacob and Esau
 Defeat The Beast as Jacob and Esau
-Use Red Key (etc.) to open the hidden closet in Home as Isaac
-Use Red Key (etc.) to open the hidden closet in Home as Magdalene
-Use Red Key (etc.) to open the hidden closet in Home as Cain
-Use Red Key (etc.) to open the hidden closet in Home as Judas
-Use Red Key (etc.) to open the hidden closet in Home as ???
-Use Red Key (etc.) to open the hidden closet in Home as Eve
-Use Red Key (etc.) to open the hidden closet in Home as Samson
-Use Red Key (etc.) to open the hidden closet in Home as Azazel
-Use Red Key (etc.) to open the hidden closet in Home as Lazarus
-Use Red Key (etc.) to open the hidden closet in Home as Eden
-Use Red Key (etc.) to open the hidden closet in Home as The Lost
-Use Red Key (etc.) to open the hidden closet in Home as Lilith
-Use Red Key (etc.) to open the hidden closet in Home as Keeper
-Use Red Key (etc.) to open the hidden closet in Home as Apollyon
-Use Red Key (etc.) to open the hidden closet in Home as The Forgotten
-Use Red Key (etc.) to open the hidden closet in Home as Bethany
-Use Red Key (etc.) to open the hidden closet in Home as Jacob and Esau
+Use Red Key or Red Key piece to open the hidden closet in Home as Isaac
+Use Red Key or Red Key piece to open the hidden closet in Home as Magdalene
+Use Red Key or Red Key piece to open the hidden closet in Home as Cain
+Use Red Key or Red Key piece to open the hidden closet in Home as Judas
+Use Red Key or Red Key piece to open the hidden closet in Home as ???
+Use Red Key or Red Key piece to open the hidden closet in Home as Eve
+Use Red Key or Red Key piece to open the hidden closet in Home as Samson
+Use Red Key or Red Key piece to open the hidden closet in Home as Azazel
+Use Red Key or Red Key piece to open the hidden closet in Home as Lazarus
+Use Red Key or Red Key piece to open the hidden closet in Home as Eden
+Use Red Key or Red Key piece to open the hidden closet in Home as The Lost
+Use Red Key or Red Key piece to open the hidden closet in Home as Lilith
+Use Red Key or Red Key piece to open the hidden closet in Home as Keeper
+Use Red Key or Red Key piece to open the hidden closet in Home as Apollyon
+Use Red Key or Red Key piece to open the hidden closet in Home as The Forgotten
+Use Red Key or Red Key piece to open the hidden closet in Home as Bethany
+Use Red Key or Red Key piece to open the hidden closet in Home as Jacob and Esau
 Defeat The Beast as Tainted Isaac
 Defeat The Beast as Tainted Magdalene
 Defeat The Beast as Tainted Cain

@@ -89,6 +89,7 @@ component Icon inherits Image {
 	in-out property <bool> has-unlocked: Search.achievements[id].unlocked;
 	in property <bool> achievement;
 	in property <int> id;
+	out property <bool> has-hover <=> ta.has-hover;
 	rect := Rectangle {
 		callback pressed;
 		ta:= TouchArea { 
@@ -144,8 +145,10 @@ component IconDisplay inherits Rectangle {
 	in property <IsaacIcon> icon;
 	in property <bool> is-achievement;
 	in property <length> font-size;
+	property <bool> description: (is-achievement && ic.has-hover);
 	VerticalLayout {
-		Icon {
+		alignment: stretch;
+		ic:= Icon {
 			width: size;
 			height: size;
 			achievement: is-achievement;
@@ -154,26 +157,40 @@ component IconDisplay inherits Rectangle {
 			has-unlocked: achievement.unlocked;
 		}
 		Text {
+			height: self.font-size;
 			font-size: font-size;
 			text: achievement.id + 1;
 			horizontal-alignment: center;
 		}
-		Text {
+		name:= Text {
 			font-size: font-size;
-			text: (is-achievement && ta.has-hover) ? icon.description : icon.name;
-			color: (is-achievement && ta.has-hover) ? black : white;
+			min-height: self.font-size;
+			text: icon.name;
+			color: description ? transparent : white;
 			wrap: word-wrap;
 			horizontal-alignment: center;
 			z: 10;
-			ta:= TouchArea {
+			animate color {
+				duration: 100ms; easing: ease;
+			}
+			description-text:= Text {
+				horizontal-alignment: center;
+				font-size: font-size;
+				width: parent.width;
+				text: description ? icon.description : "";
+				color: !description ? transparent : black;
+				wrap: word-wrap;
+				animate color {
+					duration: 100ms; easing: ease;
+				}
 			}
 		}
 	}
 	Rectangle {
 		drop-shadow-blur: 8px;
-		drop-shadow-color: (is-achievement && ta.has-hover) ? red.transparentize(60%): transparent;
+		drop-shadow-color: description ? red.transparentize(60%): transparent;
 		animate drop-shadow-color {
-			 duration: 100ms;
+			 duration: 100ms; easing: ease;
 		}
 		z: -10;
 	}
