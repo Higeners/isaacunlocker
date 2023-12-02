@@ -4,7 +4,9 @@ use crate::savedata::{
 	ITEMS_TOTAL
 };
 use find_all::FindAll;
-use std::{rc::Rc, collections::HashSet};
+use std::{rc::Rc, collections::HashSet, cell::RefCell};
+
+use ini::Ini;
 
 use crate::*;
 use slint::*;
@@ -67,14 +69,27 @@ fn imbed_items_images() -> Vec<(slint::Image, String)> {
 pub struct Unlocker {
 	data: Rc<TotalData>,
 	app: App,
+	config: Rc<RefCell<Ini>>,
 }
 
 impl Unlocker {
-	pub fn new() -> Self {
-		Self { data: Rc::new(TotalData::new()), app: App::new().unwrap()}
+	pub fn new(config: Ini) -> Result<Self, String> {
+		let is_cloud = config.section(Some("Init")).unwrap().get("CloudEnabled").unwrap() == "true";
+		if is_cloud {
+			if let Err(er) = ISAAC_FOLDER.as_ref() {
+				return Err(er.to_string());
+			}
+		} else {
+			let mut game_dir = dirs_next::document_dir().ok_or("Failed to find Documents folder")?;
+			game_dir.push("My Games\\Binding of Isaac Repentance");
+			if !game_dir.exists() {
+				return Err("Failed to find Isaac Save Folder".to_string());
+			}
+		}
+		Ok (Self { data: Rc::new(if is_cloud { TotalData::cloud_saves() }else {TotalData::local_saves() }), app: App::new().unwrap(),config: Rc::new(RefCell::new(config))})
 	}
 
-	pub fn init(&self) {
+	pub fn init(&mut self) {
 		let icons = {
 			let images = imbed_achivement_images();
 			let mut arr = vec![];
@@ -103,16 +118,26 @@ impl Unlocker {
 			let v = std::rc::Rc::new(VecModel::from(v));
 			self.app.global::<Search>().set_saves(v.into());
 		}
-		let savefile = self.app.global::<Search>().get_Savefile() as usize;
+		let savefile;
+		if let Some(val) = self.config.borrow().section(Some("Init")).unwrap().get("Savefile") {
+			savefile = val.parse().unwrap();
+			self.app.global::<Search>().set_Savefile(savefile as i32);
+		}else {
+			savefile = self.app.global::<Search>().get_Savefile() as usize;
+			self.config.borrow_mut().section_mut(Some("Init"))
+				.unwrap()
+				.insert("Savefile", savefile.to_string());
+			self.config.borrow_mut().write_to_file(CONFIG_PATH.as_path());
+		}
 
-		let items = self.data.saves[savefile - 1].unwrap()
+		let items = self.data.saves[savefile - 1].as_ref().unwrap()
 			.items.iter()
 			.enumerate()
 			.fold( Vec::<Achievement>::new(), |mut acc, (x, i)| {
 				acc.push(Achievement {id: x as i32, unlocked: *i});
 				acc
 		} );
-		let achievements = self.data.saves[savefile - 1].unwrap().
+		let achievements = self.data.saves[savefile - 1].as_ref().unwrap().
 			achievements.iter()
 			.enumerate()
 			.fold( Vec::<Achievement>::new(), |mut acc, (x, i)| {
@@ -151,12 +176,16 @@ impl Unlocker {
 		let weak_achievements = Rc::downgrade(achievements);
 		let weak_items = Rc::downgrade(items);
 		let weak_saves = Rc::downgrade(&self.data);
+		let weak_config = Rc::downgrade(&self.config);
 		self.app.global::<Search>().on_select_save(move |save| { 
+			let config = weak_config.upgrade().unwrap();
+			config.borrow_mut().with_section(Some("Init")).set("Savefile", save.to_string());
+			config.borrow().write_to_file(CONFIG_PATH.as_path());
 			let app = weak_app.upgrade().unwrap();
 			let achievements = weak_achievements.upgrade().unwrap();
 			let items = weak_items.upgrade().unwrap();
 			let saves = weak_saves.upgrade().unwrap();
-			let save_data = saves.saves[(save - 1) as usize].unwrap();
+			let save_data = saves.saves[(save - 1) as usize].as_ref().unwrap();
 		
 			achievements.set_vec(save_data.achievements.iter().enumerate().fold( Vec::<Achievement>::new(), |mut acc, (x, i)| {
 				acc.push(Achievement {id: x as i32, unlocked: *i});
@@ -251,7 +280,7 @@ impl Unlocker {
 			let achievements = weak_achievements.upgrade().unwrap();
 			let app = weak_app.upgrade().unwrap();
 			let saves = weak_saves.upgrade().unwrap();
-			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].unwrap()
+			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].as_ref().unwrap()
 				.unlock_achievements(achievements.iter().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, x| {
 					acc[x.id as usize] = x.unlocked;
 					acc
@@ -271,7 +300,7 @@ impl Unlocker {
 			}).collect::<Vec::<Achievement>>());
 			let app = weak_app.upgrade().unwrap();
 			let saves = weak_saves.upgrade().unwrap();
-			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].unwrap()
+			saves.saves[app.global::<Search>().get_Savefile() as usize - 1].as_ref().unwrap()
 				.unlock_achievements(achievements.iter().fold( [false; ACHIEVEMENTS_TOTAL], |mut acc, x| {
 					acc[x.id as usize] = x.unlocked;
 					acc

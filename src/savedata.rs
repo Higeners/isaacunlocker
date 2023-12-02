@@ -37,14 +37,12 @@ pub const ITEMS_TOTAL: usize = 717;
 const ACHIEVEMENT_OFFSET: u64 = 33;
 const ITEMS_OFFSET: u64 = 0xABB;
 
-#[derive(Clone, Copy)]
 pub struct SaveData {
 	pub achievements: [bool; ACHIEVEMENTS_TOTAL],
 	pub items: [bool; ITEMS_TOTAL],
-	saveid: u32,
+	path: String,
 }
 
-#[derive(Clone, Copy)]
 pub struct TotalData {
 	pub saves: [Option<SaveData>; 3],
 }
@@ -94,19 +92,29 @@ fn check_sum(buf: Vec<u8>) -> u32 {
 }
 
 impl TotalData {
-	pub fn new() -> Self {
-		let mut data = [None; 3];
+	pub fn local_saves() -> Self {
+		let mut data = [None, None, None];
 		for i in 1..=3 {
-			data[i-1] = SaveData::load_save(i as u32);
+			data[i-1] = SaveData::load_local_save(i as u32);
+		}
+		Self { saves: data }
+	}
+	pub fn cloud_saves() -> Self {
+		let mut data = [None, None, None];
+		for i in 1..=3 {
+			data[i-1] = SaveData::load_cloud_save(i as u32);
 		}
 		Self { saves: data }
 	}
 }
 
 impl SaveData {
-	pub fn load_save(savefile: u32, ) -> Option<Self> {
+	pub fn load_cloud_save(savefile: u32, ) -> Option<Self> {
 		let path = ISAAC_FOLDER.as_ref().unwrap().to_string() + format!("\\rep_persistentgamedata{savefile}.dat").as_str();
-		let file = File::open(path).ok()?;
+		Self::load_save_from_path(path)
+	}
+	fn load_save_from_path(path: String) -> Option<Self> {
+		let file = File::open(&path).ok()?;
 		let mut buf = [0; 637];
 		file.seek_read(&mut buf, ACHIEVEMENT_OFFSET).ok()?;
 		let ach = {
@@ -132,22 +140,32 @@ impl SaveData {
 				}
 			})
 		};
-		Some(Self { achievements: ach, items: items, saveid: savefile })
-
+		Some(Self { achievements: ach, items: items, path: path })
+	}
+	pub fn load_local_save(savefile: u32) -> Option<Self> {
+		let path: String = {
+			let mut game_dir = dirs_next::document_dir().unwrap();
+			game_dir.push("My Games\\Binding of Isaac Repentance");
+			fs::read_dir(game_dir).unwrap()
+				.flatten()
+				.filter(|x| x.path().as_os_str().to_str().unwrap().contains(format!("rep_persistentgamedata{savefile}.dat").as_str()))
+				.max_by_key(|x| x.metadata().unwrap().modified().unwrap())?
+				.path().to_str().unwrap().to_string()
+		};
+		Self::load_save_from_path(path)
 	}
 
 	pub fn unlock_achievements(&self, ach: [bool; 637]) {
-		let path = ISAAC_FOLDER.as_ref().unwrap().to_string() + format!("\\rep_persistentgamedata{}.dat", self.saveid).as_str();
 		let file = OpenOptions::new()
 			.read(true)
 			.write(true)
-			.open(&path).expect("Couldn't open savefile");
+			.open(&self.path).expect("Couldn't open savefile");
 
 		file.seek_write(&ach.iter().enumerate().fold( [0 as u8; 637], |mut acc, (i, b)| {
 			acc[i] = *b as u8;
 			acc
 		}), ACHIEVEMENT_OFFSET).expect("Failed to write to savefile");
-		let buf: Vec<u8> = fs::read(&path).expect("Failed to read file");
+		let buf: Vec<u8> = fs::read(&self.path).expect("Failed to read file");
 		let checksum = check_sum(buf[0x10..buf.len() - 4].to_vec());
 		let checksum: [u8; 4] = unsafe {
 			std::mem::transmute(checksum.to_le())
