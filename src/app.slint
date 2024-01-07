@@ -379,6 +379,8 @@ export component App inherits Window {
 						font-size: 40px;
 					}
 					type:= ComboBox {
+						current-value: Search.type;
+						current-index: -1;
 						model: [
 							"All",
 							"Locked",

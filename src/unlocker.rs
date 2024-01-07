@@ -80,8 +80,7 @@ impl Unlocker {
 				return Err(er.to_string());
 			}
 		} else {
-			let mut game_dir = dirs_next::document_dir().ok_or("Failed to find Documents folder")?;
-			game_dir.push("My Games\\Binding of Isaac Repentance");
+			let game_dir = dirs_next::document_dir().ok_or("Failed to find Documents folder")?.as_path().join("My Games\\Binding of Isaac Repentance");
 			if !game_dir.exists() {
 				return Err("Failed to find Isaac Save Folder".to_string());
 			}
@@ -118,17 +117,20 @@ impl Unlocker {
 			let v = std::rc::Rc::new(VecModel::from(v));
 			self.app.global::<Search>().set_saves(v.into());
 		}
+		// Savefile index initialization
 		let savefile;
-		if let Some(val) = self.config.borrow().section(Some("Init")).unwrap().get("Savefile") {
+		let mut config = self.config.borrow_mut();
+		if let Some(val) = config.section(Some("Init")).unwrap().get("Savefile") {
 			savefile = val.parse().unwrap();
 			self.app.global::<Search>().set_Savefile(savefile as i32);
 		}else {
 			savefile = self.app.global::<Search>().get_Savefile() as usize;
-			self.config.borrow_mut().section_mut(Some("Init"))
+			config.section_mut(Some("Init"))
 				.unwrap()
 				.insert("Savefile", savefile.to_string());
-			self.config.borrow_mut().write_to_file(CONFIG_PATH.as_path());
+			config.write_to_file(CONFIG_PATH.as_path());
 		}
+
 
 		let items = self.data.saves[savefile - 1].as_ref().unwrap()
 			.items.iter()
@@ -156,11 +158,27 @@ impl Unlocker {
 		self.app.global::<Search>().set_icons(icons.into());
 		self.app.global::<Search>().set_achievements(achievements.clone().into());
 	
-		self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
-		self.app.global::<Search>().set_type_achievement_mask(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
+		// Mode initialization
+		if let Some(val) =config.section(Some("Init")).unwrap().get("UnlockFilter") {
+			self.app.global::<Search>().set_type(val.into());
+			let masks = Self::type_filter(val, &self.app);
+			self.app.global::<Search>().set_type_achievement_mask(Rc::new(slint::VecModel::from(masks.0.clone())).into());
+			self.app.global::<Search>().set_type_items_mask(Rc::new(slint::VecModel::from(masks.1.clone())).into());
+			self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from(masks.0)).into());
+			self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from(masks.1)).into());
+		}else {
+			self.app.global::<Search>().set_type_achievement_mask(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
+			self.app.global::<Search>().set_type_items_mask(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL) as i32).collect::<Vec<i32>>())).into());
+			self.app.global::<Search>().set_indexes(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
+			self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL) as i32).collect::<Vec<i32>>())).into());
+			config.section_mut(Some("Init"))
+				.unwrap()
+				.insert("UnlockFilter", "All");
+			config.write_to_file(CONFIG_PATH.as_path());
+		}
+	
+
 		self.app.global::<Search>().set_search_achievement_mask(Rc::new(slint::VecModel::from((0..ACHIEVEMENTS_TOTAL as i32).collect::<Vec<i32>>())).into());
-		self.app.global::<Search>().set_items_indexes(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL) as i32).collect::<Vec<i32>>())).into());
-		self.app.global::<Search>().set_type_items_mask(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL) as i32).collect::<Vec<i32>>())).into());
 		self.app.global::<Search>().set_search_items_mask(Rc::new(slint::VecModel::from((0..(ITEMS_TOTAL) as i32).collect::<Vec<i32>>())).into());
 
 		self.change_save_callback(&achievements, &items);
@@ -311,8 +329,12 @@ impl Unlocker {
 
 	fn type_select_callback(&self) {
 		let weak_app = self.app.as_weak();
+		let weak_config = Rc::downgrade(&self.config);
 
 		self.app.global::<Search>().on_type_select(move |ty| {
+			let config = weak_config.upgrade().unwrap();
+			config.borrow_mut().with_section(Some("Init")).set("UnlockFilter", ty.to_string());
+			config.borrow().write_to_file(CONFIG_PATH.as_path());
 			let app = weak_app.upgrade().unwrap();
 			let indexes: (Vec<i32>, Vec<i32>) = {
 				Self::type_filter(ty.as_str(), &app)
